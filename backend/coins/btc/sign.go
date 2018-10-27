@@ -30,9 +30,10 @@ import (
 
 // ProposedTransaction contains all the info needed to sign a btc transaction.
 type ProposedTransaction struct {
-	TXProposal      *maketx.TxProposal
-	PreviousOutputs map[wire.OutPoint]*transactions.SpendableOutput
-	GetAddress      func(blockchain.ScriptHashHex) *addresses.AccountAddress
+	TXProposal       *maketx.TxProposal
+	RecipientAddress string
+	PreviousOutputs  map[wire.OutPoint]*transactions.SpendableOutput
+	GetAddress       func(blockchain.ScriptHashHex) *addresses.AccountAddress
 	// Signatures collects the signatures (signatures[transactionInput][cosignerIndex]).
 	Signatures [][]*btcec.Signature
 	SigHashes  *txscript.TxSigHashes
@@ -43,16 +44,18 @@ type ProposedTransaction struct {
 func SignTransaction(
 	keystores keystore.Keystores,
 	txProposal *maketx.TxProposal,
+	recipientAddress string,
 	previousOutputs map[wire.OutPoint]*transactions.SpendableOutput,
 	getAddress func(blockchain.ScriptHashHex) *addresses.AccountAddress,
 	log *logrus.Entry,
 ) error {
 	proposedTransaction := &ProposedTransaction{
-		TXProposal:      txProposal,
-		PreviousOutputs: previousOutputs,
-		GetAddress:      getAddress,
-		Signatures:      make([][]*btcec.Signature, len(txProposal.Transaction.TxIn)),
-		SigHashes:       txscript.NewTxSigHashes(txProposal.Transaction),
+		TXProposal:       txProposal,
+		PreviousOutputs:  previousOutputs,
+		GetAddress:       getAddress,
+		RecipientAddress: recipientAddress,
+		Signatures:       make([][]*btcec.Signature, len(txProposal.Transaction.TxIn)),
+		SigHashes:        txscript.NewTxSigHashes(txProposal.Transaction),
 	}
 
 	for i := range proposedTransaction.Signatures {

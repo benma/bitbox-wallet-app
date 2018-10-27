@@ -22,6 +22,7 @@ import (
 
 	"github.com/digitalbitbox/bitbox-wallet-app/backend/devices/bitbox"
 	"github.com/digitalbitbox/bitbox-wallet-app/backend/devices/device"
+	"github.com/digitalbitbox/bitbox-wallet-app/backend/devices/trezor"
 	"github.com/digitalbitbox/bitbox-wallet-app/util/errp"
 	"github.com/digitalbitbox/bitbox-wallet-app/util/logging"
 	"github.com/digitalbitbox/bitbox-wallet-app/util/semver"
@@ -38,6 +39,10 @@ func isBitBox(deviceInfo hid.DeviceInfo) bool {
 	return deviceInfo.VendorID == bitboxVendorID && deviceInfo.ProductID == bitboxProductID && (deviceInfo.UsagePage == 0xffff || deviceInfo.Interface == 0)
 }
 
+func isTrezor(deviceInfo hid.DeviceInfo) bool {
+	return deviceInfo.VendorID == 0x534c && deviceInfo.ProductID == 0x0001 && (deviceInfo.UsagePage == 0xff00 || deviceInfo.Interface == 0)
+}
+
 // DeviceInfos returns a slice of all found bitbox devices.
 func DeviceInfos() []hid.DeviceInfo {
 	deviceInfos := []hid.DeviceInfo{}
@@ -48,6 +53,8 @@ func DeviceInfos() []hid.DeviceInfo {
 			continue
 		}
 		if isBitBox(deviceInfo) {
+			deviceInfos = append(deviceInfos, deviceInfo)
+		} else if isTrezor(deviceInfo) {
 			deviceInfos = append(deviceInfos, deviceInfo)
 		}
 	}
@@ -142,6 +149,21 @@ func (manager *Manager) makeBitBox(deviceInfo hid.DeviceInfo) (*bitbox.Device, e
 	return device, nil
 }
 
+func (manager *Manager) makeTrezor(deviceInfo hid.DeviceInfo) (*trezor.Device, error) {
+	deviceID := deviceIdentifier(deviceInfo)
+	manager.log.WithField("device-id", deviceID).Info("Registering trezor")
+
+	hidDevice, err := deviceInfo.Open()
+	if err != nil {
+		return nil, errp.WithMessage(err, "Failed to open device")
+	}
+
+	return trezor.NewDevice(
+		deviceID,
+		hidDevice,
+	), nil
+}
+
 // checkIfRemoved returns true if a device was plugged in, but is not plugged in anymore.
 func (manager *Manager) checkIfRemoved(deviceID string) bool {
 	// In edge cases, device enumeration hangs waiting for the device, and can be empty for a very
@@ -182,6 +204,13 @@ func (manager *Manager) listen() {
 			if isBitBox(deviceInfo) {
 				var err error
 				device, err = manager.makeBitBox(deviceInfo)
+				if err != nil {
+					manager.log.WithError(err).Error("Failed to register bitbox")
+					continue
+				}
+			} else if isTrezor(deviceInfo) {
+				var err error
+				device, err = manager.makeTrezor(deviceInfo)
 				if err != nil {
 					manager.log.WithError(err).Error("Failed to register bitbox")
 					continue

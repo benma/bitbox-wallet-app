@@ -37,6 +37,8 @@ import (
 type SpendableOutput struct {
 	*wire.TxOut
 	Address string
+	// Tx is the transaction this output belongs to.
+	Tx *wire.MsgTx
 }
 
 // ScriptHashHex returns the hash of the PkScript of the output, in hex format.
@@ -226,6 +228,7 @@ func (transactions *Transactions) SpendableOutputs() map[wire.OutPoint]*Spendabl
 			result[outPoint] = &SpendableOutput{
 				TxOut:   txOut,
 				Address: transactions.outputToAddress(txOut.PkScript),
+				Tx:      tx,
 			}
 		}
 	}

@@ -82,14 +82,22 @@ func (path keypath) encode() string {
 	return strings.Join(nodes, "/")
 }
 
-func (path keypath) derive(extendedKey *hdkeychain.ExtendedKey) (*hdkeychain.ExtendedKey, error) {
-	for _, node := range path {
+func (path keypath) toUInt32() []uint32 {
+	result := make([]uint32, len(path))
+	for index, node := range path {
 		offset := uint32(0)
 		if node.hardened {
 			offset = hdkeychain.HardenedKeyStart
 		}
+		result[index] = offset + node.index
+	}
+	return result
+}
+
+func (path keypath) derive(extendedKey *hdkeychain.ExtendedKey) (*hdkeychain.ExtendedKey, error) {
+	for _, child := range path.toUInt32() {
 		var err error
-		extendedKey, err = extendedKey.Child(offset + node.index)
+		extendedKey, err = extendedKey.Child(child)
 		if err != nil {
 			return nil, err
 		}
@@ -146,6 +154,10 @@ func (relativeKeypath RelativeKeypath) Derive(
 	return keypath(relativeKeypath).derive(extendedKey)
 }
 
+func (relativeKeypath RelativeKeypath) ToUInt32() []uint32 {
+	return keypath(relativeKeypath).toUInt32()
+}
+
 // AbsoluteKeypath models an absolute keypath according to BIP32.
 type AbsoluteKeypath keypath
 
@@ -190,6 +202,10 @@ func (absoluteKeypath AbsoluteKeypath) Derive(
 	extendedKey *hdkeychain.ExtendedKey,
 ) (*hdkeychain.ExtendedKey, error) {
 	return keypath(absoluteKeypath).derive(extendedKey)
+}
+
+func (absoluteKeypath AbsoluteKeypath) ToUInt32() []uint32 {
+	return keypath(absoluteKeypath).toUInt32()
 }
 
 // MarshalJSON implements json.Marshaler.

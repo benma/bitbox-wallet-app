@@ -16,6 +16,7 @@
 
 import { Component, h, RenderableProps } from 'preact';
 import { route } from 'preact-router';
+import { Trezor } from '../../components/devices/trezor/trezor';
 import Device from './device';
 import { Waiting } from './waiting';
 
@@ -44,6 +45,8 @@ class DeviceSwitch extends Component<Props, {}> {
         switch (devices[deviceID]) {
         case 'bitbox':
             return <Device deviceID={deviceID} />;
+        case 'trezor':
+            return <Trezor deviceID={deviceID} />;
         default:
             return <Waiting />;
         }

@@ -25,6 +25,7 @@ import { apiWebsocket } from './utils/websocket';
 import { Update } from './components/update/update';
 import Sidebar from './components/sidebar/sidebar';
 import Container from './components/container/Container';
+import { TrezorDialog } from './components/devices/trezor/dialog';
 import { DeviceSwitch } from './routes/device/deviceswitch';
 import Account from './routes/account/account';
 import Send from './routes/account/send/send';
@@ -136,6 +137,7 @@ export class App extends Component {
                     show={activeSidebar} />
                 <div class="appContent flex-column flex-1" style="min-width: 0;">
                     <Update />
+                    <TrezorDialog />
                     <Container toggleSidebar={this.toggleSidebar} onChange={this.handleRoute}>
                         <Send
                             path="/account/:code/send"

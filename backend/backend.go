@@ -60,9 +60,10 @@ type backendEvent struct {
 }
 
 type deviceEvent struct {
-	DeviceID string `json:"deviceID"`
-	Type     string `json:"type"`
-	Data     string `json:"data"`
+	DeviceID    string `json:"deviceID"`
+	ProductName string `json:"productName"`
+	Type        string `json:"type"`
+	Data        string `json:"data"`
 	// TODO: rename Data to Event, Meta to Data.
 	Meta interface{} `json:"meta"`
 }
@@ -478,8 +479,6 @@ func (backend *Backend) DeregisterKeystore() {
 func (backend *Backend) Register(theDevice device.Interface) error {
 	backend.devices[theDevice.Identifier()] = theDevice
 	backend.onDeviceInit(theDevice)
-	theDevice.Init(backend.Testing())
-
 	mainKeystore := len(backend.devices) == 1
 	theDevice.SetOnEvent(func(event device.Event, data interface{}) {
 		switch event {
@@ -505,10 +504,11 @@ func (backend *Backend) Register(theDevice device.Interface) error {
 			}
 		}
 		backend.events <- deviceEvent{
-			DeviceID: theDevice.Identifier(),
-			Type:     "device",
-			Data:     string(event),
-			Meta:     data,
+			DeviceID:    theDevice.Identifier(),
+			ProductName: theDevice.ProductName(),
+			Type:        "device",
+			Data:        string(event),
+			Meta:        data,
 		}
 	})
 	select {
@@ -518,7 +518,7 @@ func (backend *Backend) Register(theDevice device.Interface) error {
 	}:
 	default:
 	}
-	return nil
+	return theDevice.Init(backend.Testing())
 }
 
 // Deregister deregisters the device with the given ID from this backend.

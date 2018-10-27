@@ -158,7 +158,7 @@ func NewDevice(
 	channelConfigDir string,
 	communication CommunicationInterface) (*Device, error) {
 	log := logging.Get().WithGroup("device").WithField("deviceID", deviceID)
-	log.WithFields(logrus.Fields{"deviceID": deviceID, "version": version}).Info("Plugged in device")
+	log.WithField("version", version).Info("Plugged in device")
 
 	var bootloaderStatus *BootloaderStatus
 	if bootloader {
@@ -209,8 +209,9 @@ func NewDevice(
 }
 
 // Init initialized the device. testing means the device is initialized for testnet.
-func (dbb *Device) Init(testing bool) {
+func (dbb *Device) Init(testing bool) error {
 	dbb.setPasswordPolicy(testing)
+	return nil
 }
 
 // setPasswordPolicy sets the password policy to the test or prod policy.
