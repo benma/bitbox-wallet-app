@@ -23,10 +23,22 @@
 required = []
 
 [[constraint]]
+  branch = "trezor_proto"
+  name = "github.com/ethereum/go-ethereum"
+
+  source = "https://github.com/benma/go-ethereum.git"
+
+[[constraint]]
   branch = "master"
   name = "github.com/btcsuite/btcd"
 
   source = "https://github.com/btcsuite/btcd.git"
+
+[[constraint]]
+  branch = "hdkeychain"
+  name = "github.com/btcsuite/btcutil"
+
+  source = "https://github.com/benma/btcutil.git"
 
 [[constraint]]
   branch = "master"

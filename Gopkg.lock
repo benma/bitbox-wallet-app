@@ -11,6 +11,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:9f5a432e492fe11eb7d0d8a059524a8618358494f009670c23c8ce734ae70e1c"
+  name = "github.com/aristanetworks/goarista"
+  packages = ["monotime"]
+  pruneopts = ""
+  revision = "33151c4543a79b013e8e6799ef45b2ba88c3cd1c"
+
+[[projects]]
+  branch = "master"
   digest = "1:83160035e81a0d248a1379f71b12e94c26b0cc8dab22994663af7e2e9ff9611b"
   name = "github.com/btcsuite/btcd"
   packages = [
@@ -39,8 +47,8 @@
   revision = "84c8d2346e9fc8c7b947e243b9c24e6df9fd206a"
 
 [[projects]]
-  branch = "master"
-  digest = "1:56b87c786a316d6e9b9c7ba8f3dd64e3199ca3b33a55cc596c633023bed20264"
+  branch = "hdkeychain"
+  digest = "1:e6eb628e31cecc01f48151687cd86efaeefcc21ba60e44280228460825b17df8"
   name = "github.com/btcsuite/btcutil"
   packages = [
     ".",
@@ -52,7 +60,8 @@
     "txsort",
   ]
   pruneopts = ""
-  revision = "ab6388e0c60ae4834a1f57511e20c17b5f78be4b"
+  revision = "4888a92f4ee4a620a137edbaf0c0a33db7737143"
+  source = "https://github.com/benma/btcutil.git"
 
 [[projects]]
   branch = "master"
@@ -87,13 +96,16 @@
   version = "v1.7.1"
 
 [[projects]]
-  digest = "1:3c11702e3f6b0daf20996ef8adb0177c51ffb1b3326eebe373d27083e589cd3c"
+  branch = "trezor_proto"
+  digest = "1:f6badab47a4fa43bf81c221caefa5d2f7d2cca5b44ec25cfeb4fbb71344a2af8"
   name = "github.com/ethereum/go-ethereum"
   packages = [
     ".",
+    "accounts/usbwallet/proto/trezor",
     "common",
     "common/hexutil",
     "common/math",
+    "common/mclock",
     "common/prque",
     "core/types",
     "crypto",
@@ -110,8 +122,8 @@
     "trie",
   ]
   pruneopts = ""
-  revision = "477eb0933b9529f7deeccc233cc815fe34a8ea56"
-  version = "v1.8.16"
+  revision = "99926027f300decb0d09b9edfcb0b97c802f46bc"
+  source = "https://github.com/benma/go-ethereum.git"
 
 [[projects]]
   digest = "1:a01080d20c45c031c13f3828c56e58f4f51d926a482ad10cc0316225097eb7ea"
@@ -120,6 +132,17 @@
   pruneopts = ""
   revision = "2fee6af1a9795aafbe0253a0cfbdf668e1fb8a9a"
   version = "v1.8.0"
+
+[[projects]]
+  digest = "1:3dd078fda7500c341bc26cfbc6c6a34614f295a2457149fc1045cab767cbcf18"
+  name = "github.com/golang/protobuf"
+  packages = [
+    "proto",
+    "protoc-gen-go/descriptor",
+  ]
+  pruneopts = ""
+  revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
+  version = "v1.2.0"
 
 [[projects]]
   branch = "master"
@@ -326,12 +349,14 @@
     "github.com/cloudfoundry-attic/jibber_jabber",
     "github.com/coreos/bbolt",
     "github.com/davecgh/go-spew/spew",
+    "github.com/ethereum/go-ethereum/accounts/usbwallet/proto/trezor",
     "github.com/ethereum/go-ethereum/common",
     "github.com/ethereum/go-ethereum/common/math",
     "github.com/ethereum/go-ethereum/core/types",
     "github.com/ethereum/go-ethereum/crypto",
     "github.com/ethereum/go-ethereum/ethclient",
     "github.com/ethereum/go-ethereum/params",
+    "github.com/golang/protobuf/proto",
     "github.com/gorilla/mux",
     "github.com/gorilla/websocket",
     "github.com/karalabe/hid",
