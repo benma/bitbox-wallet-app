@@ -100,31 +100,46 @@ func (configuration *Configuration) AbsoluteKeypath() AbsoluteKeypath {
 
 // ExtendedPublicKeys returns the configuration's extended public keys.
 func (configuration *Configuration) ExtendedPublicKeys() []*hdkeychain.ExtendedKey {
-	return configuration.extendedPublicKeys
+	return append([]*hdkeychain.ExtendedKey{}, configuration.extendedPublicKeys...)
+}
+
+func pubKey(xpub *hdkeychain.ExtendedKey) *btcec.PublicKey {
+	pk, err := xpub.ECPubKey()
+	if err != nil {
+		panic("Failed to convert an extended public key to a normal public key.")
+	}
+	return pk
 }
 
 // PublicKeys returns the configuration's public keys.
 func (configuration *Configuration) PublicKeys() []*btcec.PublicKey {
 	publicKeys := make([]*btcec.PublicKey, configuration.NumberOfSigners())
 	for index, extendedPublicKey := range configuration.ExtendedPublicKeys() {
-		var err error
-		publicKeys[index], err = extendedPublicKey.ECPubKey()
-		if err != nil {
-			panic("Failed to convert an extended public key to a normal public key.")
-		}
+		publicKeys[index] = pubKey(extendedPublicKey)
 	}
 	return publicKeys
 }
 
-// SortedPublicKeys returns the configuration's public keys sorted in compressed form.
-func (configuration *Configuration) SortedPublicKeys() []*btcec.PublicKey {
-	publicKeys := configuration.PublicKeys()
-	sort.Slice(publicKeys, func(i, j int) bool {
+// SortedExtendedPublicKeys returns the configuration's extended public keys sorted by the contained
+// public key.
+func (configuration *Configuration) SortedExtendedPublicKeys() []*hdkeychain.ExtendedKey {
+	xpubs := configuration.ExtendedPublicKeys()
+	sort.Slice(xpubs, func(i, j int) bool {
 		return bytes.Compare(
-			publicKeys[i].SerializeCompressed(),
-			publicKeys[j].SerializeCompressed(),
+			pubKey(xpubs[i]).SerializeCompressed(),
+			pubKey(xpubs[j]).SerializeCompressed(),
 		) < 0
 	})
+	return xpubs
+}
+
+// SortedPublicKeys returns the configuration's public keys sorted in compressed form.
+func (configuration *Configuration) SortedPublicKeys() []*btcec.PublicKey {
+	sortedXPubs := configuration.SortedExtendedPublicKeys()
+	publicKeys := make([]*btcec.PublicKey, len(sortedXPubs))
+	for index, xpub := range sortedXPubs {
+		publicKeys[index] = pubKey(xpub)
+	}
 	return publicKeys
 }
 
