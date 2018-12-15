@@ -243,7 +243,7 @@ export default class Account extends Component {
                             <ButtonLink
                                 primary
                                 href={`/account/${code}/send`}
-                                disabled={!initialized || balance && balance.available.amount === '0'}>
+                                /*disabled={!initialized || balance && balance.available.amount === '0'}*/>
                                 <img src={ArrowUp} />
                                 <span>{t('button.send')}</span>
                             </ButtonLink>

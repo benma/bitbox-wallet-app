@@ -131,6 +131,12 @@ export default class Send extends Component {
         }
     }
 
+    loadQRScanner = () => {
+        this.setState({recipientAddress: '2NDWDiy5jec5v2wWrjY1V85kGsKH51DKY36', amount: '0.001'});
+        this.convertToFiat(this.state.amount);
+        this.validateAndDisplayFee(true);
+    }
+
     send = () => {
         this.setState({ signProgress: null, isConfirming: true });
         apiPost('account/' + this.getAccount().code + '/sendtx', this.txInput()).then(result => {
@@ -482,6 +488,9 @@ export default class Send extends Component {
                                     href={`/account/${code}`}>
                                     {t('button.back')}
                                 </ButtonLink>
+                                <Button primary onClick={this.loadQRScanner}>
+                                    {t('Scan QR Code')}
+                                </Button>
                                 <Button primary onClick={this.send} disabled={this.sendDisabled() || !valid}>
                                     {t('send.button')}
                                 </Button>
