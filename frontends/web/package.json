@@ -42,7 +42,10 @@
     "preact": "8.3.1",
     "preact-compat": "3.18.0",
     "preact-router": "2.6.1",
-    "react-i18next": "7.9.0"
+    "react": "^16.6.3",
+    "react-dom": "^16.6.3",
+    "react-i18next": "7.9.0",
+    "react-qr-reader": "2.1.1"
   },
   "browserslist": [
     "last 2 Chrome versions"

@@ -36,6 +36,8 @@ import approve from '../../../assets/icons/checked.svg';
 import reject from '../../../assets/icons/cancel.svg';
 import * as style from './send.css';
 
+import QrReader from 'react-qr-reader'; // importing the QR reader
+
 @translate()
 export default class Send extends Component {
 
@@ -65,8 +67,15 @@ export default class Send extends Component {
             signConfirm: null, // show visual BitBox in dialog when instructed to sign.
             coinControl: false,
             activeCoinControl: false,
+
+            qrScannerVisible: false, // flag that determines whether the qrScanner will be visible or not
+            delay: 300, // delay of the qrScanner
+            result: "No QR code scanned!",
         };
         this.selectedUTXOs = [];
+
+        this.handleScan = this.handleScan.bind(this);
+        this.handleError = this.handleError.bind(this);
     }
 
     coinSupportsCoinControl = () => {
@@ -132,9 +141,27 @@ export default class Send extends Component {
     }
 
     loadQRScanner = () => {
-        this.setState({recipientAddress: '2NDWDiy5jec5v2wWrjY1V85kGsKH51DKY36', amount: '0.001'});
+        this.setState({qrScannerVisible: true});
+        /*this.setState({recipientAddress: '2NDWDiy5jec5v2wWrjY1V85kGsKH51DKY36', amount: '0.001'});
         this.convertToFiat(this.state.amount);
-        this.validateAndDisplayFee(true);
+        this.validateAndDisplayFee(true);*/
+    }
+
+    cancelQRScanner = () => {
+        this.setState({qrScannerVisible: false});
+    }
+
+    handleScan(data) {
+        if (data) {
+            this.setState({
+                result: data,
+                qrScannerVisible: false
+            });
+        }
+    }
+
+    handleError(err) {
+        console.error(err);
     }
 
     send = () => {
@@ -365,264 +392,325 @@ export default class Send extends Component {
         const account = this.getAccount();
         if (!account) return null;
 
-        const confirmPrequel = signProgress && signProgress.steps > 1 ? (
-            <span>
+        if (this.state.qrScannerVisible) {
+            return (
+                <div class="contentWithGuide">
+                    <div class="container">
+                        <Status type="warning">
+                            {paired === false && t('warning.sendPairing')}
+                        </Status>
+                        <Header title={<h2>{t('send.title')}</h2>} {...this.props}>
+                            <Balance
+                                t={t}
+                                balance={balance} />
+                            {
+                                coinControl ? (
+                                    <div style="align-self: flex-end;">
+                                        <Button onClick={this.toggleCoinControl} primary>{t('send.toggleCoinControl')}</Button>
+                                    </div>
+                                ) : null
+                            }
+                        </Header>
+                        <div class="innerContainer scrollableContainer">
+                            <div class="content padded">
+                                {
+                                    coinControl && (
+                                        <UTXOs
+                                            active={activeCoinControl}
+                                            ref={ref => this.utxos = ref}
+                                            accountCode={account.code}
+                                            onChange={this.onSelectedUTXOsChange} />
+                                    )
+                                }
+                                <div class="row" align="center">
+                                    <QrReader
+                                        delay={this.state.delay}
+                                        onError={this.handleError}
+                                        onScan={this.handleScan}
+                                        style={{ height: "50%", width: "50%" }}
+                                    />
+                                </div>
+                                <div class="row buttons flex flex-row flex-between flex-start">
+                                    <Button primary onClick={this.cancelQRScanner}>
+                                        {t('button.back')}
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <Guide>
+                        <Entry key="guide.send.whyFee" entry={t('guide.send.whyFee')} />
+                        {isBitcoinBased(account.coinCode) && (
+                            <Entry key="guide.send.priority" entry={t('guide.send.priority')} />
+                        )}
+                        {isBitcoinBased(account.coinCode) && (
+                            <Entry key="guide.send.fee" entry={t('guide.send.fee')} />
+                        )}
+                        <Entry key="guide.send.revert" entry={t('guide.send.revert')} />
+                    </Guide>
+                </div>
+            );
+        } else {
+            const confirmPrequel = signProgress && signProgress.steps > 1 ? (
+                <span>
                 {t('send.signprogress.description', {
                     steps: signProgress.steps,
                 })}<br />
-                {t('send.signprogress.label')}: {signProgress.step}/{signProgress.steps}
+                    {t('send.signprogress.label')}: {signProgress.step}/{signProgress.steps}
             </span>
-        ) : null;
-        return (
-            <div class="contentWithGuide">
-                <div class="container">
-                    <Status type="warning">
-                        {paired === false && t('warning.sendPairing')}
-                    </Status>
-                    <Header title={<h2>{t('send.title')}</h2>} {...this.props}>
-                        <Balance
-                            t={t}
-                            balance={balance} />
-                        {
-                            coinControl ? (
-                                <div style="align-self: flex-end;">
-                                    <Button onClick={this.toggleCoinControl} primary>{t('send.toggleCoinControl')}</Button>
-                                </div>
-                            ) : null
-                        }
-                    </Header>
-                    <div class="innerContainer scrollableContainer">
-                        <div class="content padded">
+            ) : null;
+
+            return (
+                <div class="contentWithGuide">
+                    <div class="container">
+                        <Status type="warning">
+                            {paired === false && t('warning.sendPairing')}
+                        </Status>
+                        <Header title={<h2>{t('send.title')}</h2>} {...this.props}>
+                            <Balance
+                                t={t}
+                                balance={balance} />
                             {
-                                coinControl && (
-                                    <UTXOs
-                                        active={activeCoinControl}
-                                        ref={ref => this.utxos = ref}
-                                        accountCode={account.code}
-                                        onChange={this.onSelectedUTXOsChange} />
-                                )
+                                coinControl ? (
+                                    <div style="align-self: flex-end;">
+                                        <Button onClick={this.toggleCoinControl} primary>{t('send.toggleCoinControl')}</Button>
+                                    </div>
+                                ) : null
                             }
-                            <div class="row">
-                                <Input
-                                    label={t('send.address.label')}
-                                    placeholder={t('send.address.placeholder')}
-                                    id="recipientAddress"
-                                    error={addressError}
-                                    onInput={this.handleFormChange}
-                                    value={recipientAddress}
-                                    autofocus
-                                />
-                                { debug && (
-                                    <span id="sendToSelf" className={style.action} onClick={this.sendToSelf}>
+                        </Header>
+                        <div class="innerContainer scrollableContainer">
+                            <div class="content padded">
+                                {
+                                    coinControl && (
+                                        <UTXOs
+                                            active={activeCoinControl}
+                                            ref={ref => this.utxos = ref}
+                                            accountCode={account.code}
+                                            onChange={this.onSelectedUTXOsChange} />
+                                    )
+                                }
+                                <div class="row">
+                                    <Input
+                                        label={t('send.address.label')}
+                                        placeholder={t('send.address.placeholder')}
+                                        id="recipientAddress"
+                                        error={addressError}
+                                        onInput={this.handleFormChange}
+                                        value={recipientAddress}
+                                        autofocus
+                                    />
+                                    { debug && (
+                                        <span id="sendToSelf" className={style.action} onClick={this.sendToSelf}>
                                         Send to self
                                     </span>
-                                ) }
-                            </div>
-                            <div class="row">
-                                <div class="flex flex-1 flex-row flex-between flex-items-center spaced">
-                                    <Input
-                                        label={t('send.amount.label')}
-                                        id="amount"
-                                        onInput={this.handleFormChange}
-                                        disabled={sendAll}
-                                        error={amountError}
-                                        value={sendAll ? proposedAmount && proposedAmount.amount : amount}
-                                        placeholder={`${t('send.amount.placeholder')} ` + (balance && `(${balance.available.unit})`)} />
-                                    <Input
-                                        label={fiatUnit}
-                                        id="fiatAmount"
-                                        onInput={this.handleFiatInput}
-                                        disabled={sendAll}
-                                        error={amountError}
-                                        value={fiatAmount}
-                                        placeholder={`${t('send.amount.placeholder')} (${fiatUnit})`} />
+                                    ) }
                                 </div>
-                                <div class="flex flex-1 flex-row flex-between flex-items-center spaced">
-                                    <Checkbox
-                                        label={t('send.maximum')}
-                                        id="sendAll"
-                                        onChange={this.sendAll}
-                                        checked={sendAll}
-                                        className={style.maxAmount} />
+                                <div class="row">
+                                    <div class="flex flex-1 flex-row flex-between flex-items-center spaced">
+                                        <Input
+                                            label={t('send.amount.label')}
+                                            id="amount"
+                                            onInput={this.handleFormChange}
+                                            disabled={sendAll}
+                                            error={amountError}
+                                            value={sendAll ? proposedAmount && proposedAmount.amount : amount}
+                                            placeholder={`${t('send.amount.placeholder')} ` + (balance && `(${balance.available.unit})`)} />
+                                        <Input
+                                            label={fiatUnit}
+                                            id="fiatAmount"
+                                            onInput={this.handleFiatInput}
+                                            disabled={sendAll}
+                                            error={amountError}
+                                            value={fiatAmount}
+                                            placeholder={`${t('send.amount.placeholder')} (${fiatUnit})`} />
+                                    </div>
+                                    <div class="flex flex-1 flex-row flex-between flex-items-center spaced">
+                                        <Checkbox
+                                            label={t('send.maximum')}
+                                            id="sendAll"
+                                            onChange={this.sendAll}
+                                            checked={sendAll}
+                                            className={style.maxAmount} />
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="row">
-                                <div class="flex flex-1 flex-row flex-between flex-items-center spaced">
-                                    <FeeTargets
-                                        label={t('send.feeTarget.label')}
-                                        placeholder={t('send.feeTarget.placeholder')}
-                                        accountCode={account.code}
-                                        disabled={!amount && !sendAll}
-                                        onFeeTargetChange={this.feeTargetChange} />
-                                    <Input
-                                        label={t('send.fee.label')}
-                                        value={proposedFee ? proposedFee.amount + ' ' + proposedFee.unit + (proposedFee.conversions ? ' = ' + proposedFee.conversions[fiatUnit] + ' ' + fiatUnit : '') : null}
-                                        placeholder={feeTarget === 'custom' ? t('send.fee.customPlaceholder') : t('send.fee.placeholder')}
-                                        disabled={feeTarget !==  'custom'}
-                                        transparent />
-                                    {/*
+                                <div class="row">
+                                    <div class="flex flex-1 flex-row flex-between flex-items-center spaced">
+                                        <FeeTargets
+                                            label={t('send.feeTarget.label')}
+                                            placeholder={t('send.feeTarget.placeholder')}
+                                            accountCode={account.code}
+                                            disabled={!amount && !sendAll}
+                                            onFeeTargetChange={this.feeTargetChange} />
+                                        <Input
+                                            label={t('send.fee.label')}
+                                            value={proposedFee ? proposedFee.amount + ' ' + proposedFee.unit + (proposedFee.conversions ? ' = ' + proposedFee.conversions[fiatUnit] + ' ' + fiatUnit : '') : null}
+                                            placeholder={feeTarget === 'custom' ? t('send.fee.customPlaceholder') : t('send.fee.placeholder')}
+                                            disabled={feeTarget !==  'custom'}
+                                            transparent />
+                                        {/*
                                     <Input
                                         label={t('send.customFee.label')}
                                         placeholder={t('send.customFee.placeholder')}
                                         disabled
                                     />
                                     */}
+                                    </div>
+                                    {feeTarget && <p class={style.feeDescription}>{t('send.feeTarget.description.' + feeTarget)}</p>}
                                 </div>
-                                {feeTarget && <p class={style.feeDescription}>{t('send.feeTarget.description.' + feeTarget)}</p>}
-                            </div>
-                            {
-                                (account.coinCode === 'eth' || account.coinCode === 'teth') && <div class="row">
-                                    <Input
-                                        label={t('send.data.label')}
-                                        placeholder={t('send.data.placeholder')}
-                                        id="data"
-                                        error={dataError}
-                                        onInput={this.handleFormChange}
-                                        value={data}
-                                    />
+                                {
+                                    (account.coinCode === 'eth' || account.coinCode === 'teth') && <div class="row">
+                                        <Input
+                                            label={t('send.data.label')}
+                                            placeholder={t('send.data.placeholder')}
+                                            id="data"
+                                            error={dataError}
+                                            onInput={this.handleFormChange}
+                                            value={data}
+                                        />
+                                    </div>
+                                }
+                                <div class="row buttons flex flex-row flex-between flex-start">
+                                    <ButtonLink
+                                        secondary
+                                        href={`/account/${code}`}>
+                                        {t('button.back')}
+                                    </ButtonLink>
+                                    <Button primary onClick={this.loadQRScanner}>
+                                        {t('Scan QR Code')}
+                                    </Button>
+                                    <Button primary onClick={this.send} disabled={this.sendDisabled() || !valid}>
+                                        {t('send.button')}
+                                    </Button>
                                 </div>
-                            }
-                            <div class="row buttons flex flex-row flex-between flex-start">
-                                <ButtonLink
-                                    secondary
-                                    href={`/account/${code}`}>
-                                    {t('button.back')}
-                                </ButtonLink>
-                                <Button primary onClick={this.loadQRScanner}>
-                                    {t('Scan QR Code')}
-                                </Button>
-                                <Button primary onClick={this.send} disabled={this.sendDisabled() || !valid}>
-                                    {t('send.button')}
-                                </Button>
                             </div>
                         </div>
-                    </div>
-                    {
-                        isConfirming && (
-                            <WaitDialog
-                                title={t('send.confirm.title')}
-                                prequel={confirmPrequel}
-                                paired={paired}
-                                lock={lock}
-                                touchConfirm={signConfirm}
-                                includeDefault>
-                                <div class={style.confirmationBox}>
-                                    <div class={style.block}>
-                                        <p class={['label', style.confirmationLabel, 'first'].join(' ')}>
-                                            {t('send.address.label')}
-                                        </p>
-                                        <p class={style.confirmationValue}>{recipientAddress || 'N/A'}</p>
-                                    </div>
-                                    <div class={['flex flex-row flex-start', style.block, style.ignorePadding].join(' ')}>
-                                        <div class={style.half}>
-                                            <p class={['label', style.confirmationLabel].join(' ')}>
-                                                {t('send.amount.label')}
+                        {
+                            isConfirming && (
+                                <WaitDialog
+                                    title={t('send.confirm.title')}
+                                    prequel={confirmPrequel}
+                                    paired={paired}
+                                    lock={lock}
+                                    touchConfirm={signConfirm}
+                                    includeDefault>
+                                    <div class={style.confirmationBox}>
+                                        <div class={style.block}>
+                                            <p class={['label', style.confirmationLabel, 'first'].join(' ')}>
+                                                {t('send.address.label')}
                                             </p>
-                                            <table class={style.confirmationValueTable} align="right">
-                                                <tr>
-                                                    <td>{proposedAmount && proposedAmount.amount || 'N/A'}</td>
-                                                    <td>{proposedAmount && proposedAmount.unit || 'N/A'}</td>
-                                                </tr>
-                                                {
-                                                    proposedAmount && proposedAmount.conversions && (
-                                                        <tr>
-                                                            <td>{proposedAmount.conversions[fiatUnit]}</td>
-                                                            <td>{fiatUnit}</td>
-                                                        </tr>
-                                                    )
-                                                }
-                                            </table>
+                                            <p class={style.confirmationValue}>{recipientAddress || 'N/A'}</p>
                                         </div>
-                                        <div class={style.half}>
-                                            <p class={['label', style.confirmationLabel].join(' ')}>
-                                                {t('send.fee.label')}
-                                                { feeTarget ? ' (' + t(`send.feeTarget.label.${feeTarget}`) + ')' : '' }
-                                            </p>
-                                            <table class={style.confirmationValueTable} align="right">
-                                                <tr>
-                                                    <td>{proposedFee && proposedFee.amount || 'N/A'}</td>
-                                                    <td>{proposedFee && proposedFee.unit || 'N/A'}</td>
-                                                </tr>
-                                                {
-                                                    proposedFee && proposedFee.conversions && (
-                                                        <tr>
-                                                            <td>{proposedFee.conversions[fiatUnit]}</td>
-                                                            <td>{fiatUnit}</td>
-                                                        </tr>
-                                                    )
-                                                }
-                                            </table>
-                                        </div>
-                                    </div>
-                                    {
-                                        this.selectedUTXOs.length !== 0 && (
-                                            <div class={style.block}>
+                                        <div class={['flex flex-row flex-start', style.block, style.ignorePadding].join(' ')}>
+                                            <div class={style.half}>
                                                 <p class={['label', style.confirmationLabel].join(' ')}>
-                                                    {t('send.confirm.selected-coins')}
+                                                    {t('send.amount.label')}
                                                 </p>
-                                                {
-                                                    Object.keys(this.selectedUTXOs).map((uxto, i) => (
-                                                        <p class={style.confirmationValue} key={`selectedCoin-${i}`}>{uxto}</p>
-                                                    ))
-                                                }
+                                                <table class={style.confirmationValueTable} align="right">
+                                                    <tr>
+                                                        <td>{proposedAmount && proposedAmount.amount || 'N/A'}</td>
+                                                        <td>{proposedAmount && proposedAmount.unit || 'N/A'}</td>
+                                                    </tr>
+                                                    {
+                                                        proposedAmount && proposedAmount.conversions && (
+                                                            <tr>
+                                                                <td>{proposedAmount.conversions[fiatUnit]}</td>
+                                                                <td>{fiatUnit}</td>
+                                                            </tr>
+                                                        )
+                                                    }
+                                                </table>
                                             </div>
-                                        )
-                                    }
-                                    <div class={style.block}>
-                                        <p class={['label', style.confirmationLabel].join(' ')}>
-                                            {t('send.confirm.total')}
-                                        </p>
-                                        <div>
-                                            <table class={[style.confirmationValueTable, style.total].join(' ')} align="right">
-                                                <tr>
-                                                    <td>{proposedTotal && proposedTotal.amount || 'N/A'}</td>
-                                                    <td>{proposedTotal && proposedTotal.unit || 'N/A'}</td>
-                                                </tr>
-                                                {
-                                                    proposedTotal && proposedTotal.conversions && (
-                                                        <tr>
-                                                            <td>{proposedTotal.conversions[fiatUnit]}</td>
-                                                            <td>{fiatUnit}</td>
-                                                        </tr>
-                                                    )
-                                                }
-                                            </table>
+                                            <div class={style.half}>
+                                                <p class={['label', style.confirmationLabel].join(' ')}>
+                                                    {t('send.fee.label')}
+                                                    { feeTarget ? ' (' + t(`send.feeTarget.label.${feeTarget}`) + ')' : '' }
+                                                </p>
+                                                <table class={style.confirmationValueTable} align="right">
+                                                    <tr>
+                                                        <td>{proposedFee && proposedFee.amount || 'N/A'}</td>
+                                                        <td>{proposedFee && proposedFee.unit || 'N/A'}</td>
+                                                    </tr>
+                                                    {
+                                                        proposedFee && proposedFee.conversions && (
+                                                            <tr>
+                                                                <td>{proposedFee.conversions[fiatUnit]}</td>
+                                                                <td>{fiatUnit}</td>
+                                                            </tr>
+                                                        )
+                                                    }
+                                                </table>
+                                            </div>
+                                        </div>
+                                        {
+                                            this.selectedUTXOs.length !== 0 && (
+                                                <div class={style.block}>
+                                                    <p class={['label', style.confirmationLabel].join(' ')}>
+                                                        {t('send.confirm.selected-coins')}
+                                                    </p>
+                                                    {
+                                                        Object.keys(this.selectedUTXOs).map((uxto, i) => (
+                                                            <p class={style.confirmationValue} key={`selectedCoin-${i}`}>{uxto}</p>
+                                                        ))
+                                                    }
+                                                </div>
+                                            )
+                                        }
+                                        <div class={style.block}>
+                                            <p class={['label', style.confirmationLabel].join(' ')}>
+                                                {t('send.confirm.total')}
+                                            </p>
+                                            <div>
+                                                <table class={[style.confirmationValueTable, style.total].join(' ')} align="right">
+                                                    <tr>
+                                                        <td>{proposedTotal && proposedTotal.amount || 'N/A'}</td>
+                                                        <td>{proposedTotal && proposedTotal.unit || 'N/A'}</td>
+                                                    </tr>
+                                                    {
+                                                        proposedTotal && proposedTotal.conversions && (
+                                                            <tr>
+                                                                <td>{proposedTotal.conversions[fiatUnit]}</td>
+                                                                <td>{fiatUnit}</td>
+                                                            </tr>
+                                                        )
+                                                    }
+                                                </table>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </WaitDialog>
-                        )
-                    }
-                    {
-                        isSent && (
-                            <WaitDialog>
-                                <div class="flex flex-row flex-center flex-items-center text-bold">
-                                    <img src={approve} alt="Success" style="height: 40px; margin-right: 1rem;" />{t('send.success')}
-                                </div>
-                            </WaitDialog>
-                        )
-                    }
-                    {
-                        isAborted && (
-                            <WaitDialog>
-                                <div class="flex flex-row flex-center flex-items-center text-bold">
-                                    <img src={reject} alt="Abort" style="height: 40px; margin-right: 1rem;" />{t('send.abort')}
-                                </div>
-                            </WaitDialog>
-                        )
-                    }
+                                </WaitDialog>
+                            )
+                        }
+                        {
+                            isSent && (
+                                <WaitDialog>
+                                    <div class="flex flex-row flex-center flex-items-center text-bold">
+                                        <img src={approve} alt="Success" style="height: 40px; margin-right: 1rem;" />{t('send.success')}
+                                    </div>
+                                </WaitDialog>
+                            )
+                        }
+                        {
+                            isAborted && (
+                                <WaitDialog>
+                                    <div class="flex flex-row flex-center flex-items-center text-bold">
+                                        <img src={reject} alt="Abort" style="height: 40px; margin-right: 1rem;" />{t('send.abort')}
+                                    </div>
+                                </WaitDialog>
+                            )
+                        }
+                    </div>
+                    <Guide>
+                        <Entry key="guide.send.whyFee" entry={t('guide.send.whyFee')} />
+                        {isBitcoinBased(account.coinCode) && (
+                            <Entry key="guide.send.priority" entry={t('guide.send.priority')} />
+                        )}
+                        {isBitcoinBased(account.coinCode) && (
+                            <Entry key="guide.send.fee" entry={t('guide.send.fee')} />
+                        )}
+                        <Entry key="guide.send.revert" entry={t('guide.send.revert')} />
+                    </Guide>
                 </div>
-                <Guide>
-                    <Entry key="guide.send.whyFee" entry={t('guide.send.whyFee')} />
-                    {isBitcoinBased(account.coinCode) && (
-                        <Entry key="guide.send.priority" entry={t('guide.send.priority')} />
-                    )}
-                    {isBitcoinBased(account.coinCode) && (
-                        <Entry key="guide.send.fee" entry={t('guide.send.fee')} />
-                    )}
-                    <Entry key="guide.send.revert" entry={t('guide.send.revert')} />
-                </Guide>
-            </div>
-        );
+            );
+        }
     }
 }
