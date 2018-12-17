@@ -629,6 +629,10 @@
       "title": "How to restore a wallet from a backup"
     }
   },
+  "scanQR": {
+    "button":  "Scan QR code",
+    "error": "Error! Incorrect QR code format!"
+  },
   "send": {
     "abort": "The transaction has been aborted.",
     "address": {

@@ -38,6 +38,8 @@ import * as style from './send.css';
 
 import QrReader from 'react-qr-reader'; // importing the QR reader
 
+const QR_SCANNER_DELAY = 300; // delay of the qrScanner; interval for periodically scanning the webcam input
+
 @translate()
 export default class Send extends Component {
 
@@ -69,12 +71,9 @@ export default class Send extends Component {
             activeCoinControl: false,
 
             qrScannerVisible: false, // flag that determines whether the qrScanner will be visible or not
-            delay: 300, // delay of the qrScanner
+            delay: QR_SCANNER_DELAY,
         };
         this.selectedUTXOs = [];
-
-        this.handleScan = this.handleScan.bind(this);
-        this.handleError = this.handleError.bind(this);
     }
 
     coinSupportsCoinControl = () => {
@@ -139,43 +138,115 @@ export default class Send extends Component {
         }
     }
 
+    /*
+    * This method makes QR scanner visible.
+    * */
     loadQRScanner = () => {
         this.setState({qrScannerVisible: true});
     }
 
+    /*
+    * This method makes QR scanner invisible.
+    * */
     cancelQRScanner = () => {
         this.setState({qrScannerVisible: false});
     }
 
-    handleScan(data) {
+    /*
+    * This method is called after QR scanner has scanned some data.
+    * It checks for validity of the scanned code using regular expressions.
+    * If the scanned data was in the required format, the corresponding input fields in the Send screen are updated.
+    *
+    * @param data data scanned by QR scanner, of type string
+    * */
+    handleScan = (data) => {
         if (data) {
-            let plainAddressRegex = /^[a-zA-Z0-9]+\?amount=(?:[1-9][0-9]*|0)(?:\.\d+|)$/g;
-            let bip0021Regex = /^(bitcoin|litecoin|etherium)\:[a-zA-Z0-9]+\?amount=(?:[1-9][0-9]*|0)(?:\.\d+|)$/g;
-            var recipientAddress, amount;
+            const RECIPIENT_ADDRESS_INDEX = 0, AMOUNT_INDEX = 1;
+            var addressInfo = this.extractAddressInfo(data);
 
-            if (plainAddressRegex.test(data)) {
-                recipientAddress = data.split('?')[0];
-                amount = data.split('?')[1].split('=')[1];
-            } else if (bip0021Regex.test(data)) {
-                recipientAddress = data.split('?')[0].split(':')[1];
-                amount = data.split('?')[1].split('=')[1];
+            if (addressInfo) {
+                this.setState({
+                    recipientAddress: addressInfo[RECIPIENT_ADDRESS_INDEX],
+                    amount: addressInfo[AMOUNT_INDEX]
+                });
+
+                this.updateFormFields();
             } else {
-                alertUser('Error! Incorrect QR code format!\n' + data);
+                alertUser(this.props.t('scanQR.error'));
             }
 
-            this.setState({
-                qrScannerVisible: false,
-                recipientAddress: recipientAddress,
-                amount: amount
-            });
-
-            this.convertToFiat(this.state.amount);
-            this.validateAndDisplayFee(true);
+            this.cancelQRScanner();
         }
     }
 
-    handleError(err) {
+    /*
+    * This method updates the input fields.
+    * */
+    updateFormFields = () => {
+        this.convertToFiat(this.state.amount);
+        this.validateAndDisplayFee(true);
+    }
+
+    /*
+    * This method extracts information about the address and the amount from the given string.
+    *
+    * @param data string scanned by the QR scanner
+    * */
+    extractAddressInfo = (data) => {
+        var addressInfoExtracted = null;
+        addressInfoExtracted = this.extractPlainAddressInfo(data);
+
+        if(!addressInfoExtracted) {
+            addressInfoExtracted = this.extractbip0021AddressInfo(data);
+        }
+
+        return addressInfoExtracted;
+    }
+
+    /*
+    * This method extracts information about the plain address and the amount from the given string.
+    *
+    * @param data string scanned by the QR scanner
+    * */
+    extractPlainAddressInfo = (plainAddress) => {
+        const plainAddressRegex = /^[a-zA-Z0-9]+\?amount=(?:[1-9][0-9]*|0)(?:\.\d+|)$/g; // example: 1F1tAaz5x1HUXrCNLbtMDqcw6o5GNn4xqX?amount=1
+
+        if(plainAddressRegex.test(plainAddress)) {
+            var recipientAddress = plainAddress.split('?')[0];
+            var amount = plainAddress.split('=')[1];
+
+            return [recipientAddress, amount];
+        } else {
+            return null;
+        }
+    }
+
+    /*
+    * This method extracts information about the bip0021 address and the amount from the given string.
+    *
+    * @param data string scanned by the QR scanner
+    * */
+    extractbip0021AddressInfo = (bip0021Address) => {
+        const bip0021AddressRegex = /^(bitcoin|litecoin|etherium)\:[a-zA-Z0-9]+\?amount=(?:[1-9][0-9]*|0)(?:\.\d+|)$/g; // example: bitcoin:1F1tAaz5x1HUXrCNLbtMDqcw6o5GNn4xqX?amount=0.5
+
+        if(bip0021AddressRegex.test(bip0021Address)) {
+            var recipientAddress = bip0021Address.split('?')[0].split(':')[1];
+            var amount = bip0021Address.split('=')[1];
+
+            return [recipientAddress, amount];
+        } else {
+            return null;
+        }
+    }
+
+    /*
+    * This method is called in case the QR scanner encounters an error.
+    *
+    * @param err information about the error, of type string
+    * */
+    handleScanError = (err) => {
         console.error(err);
+        alertUser(err);
     }
 
     send = () => {
@@ -439,7 +510,7 @@ export default class Send extends Component {
                                 <div class="row" align="center">
                                     <QrReader
                                         delay={this.state.delay}
-                                        onError={this.handleError}
+                                        onError={this.handleScanError}
                                         onScan={this.handleScan}
                                         style={{ height: "50%", width: "50%" }}
                                     />
@@ -590,7 +661,7 @@ export default class Send extends Component {
                                         {t('button.back')}
                                     </ButtonLink>
                                     <Button primary onClick={this.loadQRScanner}>
-                                        {t('Scan QR Code')}
+                                        {t('scanQR.button')}
                                     </Button>
                                     <Button primary onClick={this.send} disabled={this.sendDisabled() || !valid}>
                                         {t('send.button')}

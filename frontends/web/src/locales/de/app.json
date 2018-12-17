@@ -629,6 +629,10 @@
       "title": "Wie wird ein Wallet von einem Backup wieder hergestellt?"
     }
   },
+  "scanQR": {
+    "button":  "QR-code scannen",
+    "error": "Error! Falsches QR-Code-Format!"
+  },
   "send": {
     "abort": "Die Transaktion wurde abgebrochen",
     "address": {
