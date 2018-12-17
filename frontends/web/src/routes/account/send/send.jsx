@@ -70,7 +70,6 @@ export default class Send extends Component {
 
             qrScannerVisible: false, // flag that determines whether the qrScanner will be visible or not
             delay: 300, // delay of the qrScanner
-            result: "No QR code scanned!",
         };
         this.selectedUTXOs = [];
 
@@ -142,9 +141,6 @@ export default class Send extends Component {
 
     loadQRScanner = () => {
         this.setState({qrScannerVisible: true});
-        /*this.setState({recipientAddress: '2NDWDiy5jec5v2wWrjY1V85kGsKH51DKY36', amount: '0.001'});
-        this.convertToFiat(this.state.amount);
-        this.validateAndDisplayFee(true);*/
     }
 
     cancelQRScanner = () => {
@@ -153,10 +149,28 @@ export default class Send extends Component {
 
     handleScan(data) {
         if (data) {
+            let plainAddressRegex = /^[a-zA-Z0-9]+\?amount=(?:[1-9][0-9]*|0)(?:\.\d+|)$/g;
+            let bip0021Regex = /^(bitcoin|litecoin|etherium)\:[a-zA-Z0-9]+\?amount=(?:[1-9][0-9]*|0)(?:\.\d+|)$/g;
+            var recipientAddress, amount;
+
+            if (plainAddressRegex.test(data)) {
+                recipientAddress = data.split('?')[0];
+                amount = data.split('?')[1].split('=')[1];
+            } else if (bip0021Regex.test(data)) {
+                recipientAddress = data.split('?')[0].split(':')[1];
+                amount = data.split('?')[1].split('=')[1];
+            } else {
+                alertUser('Error! Incorrect QR code format!\n' + data);
+            }
+
             this.setState({
-                result: data,
-                qrScannerVisible: false
+                qrScannerVisible: false,
+                recipientAddress: recipientAddress,
+                amount: amount
             });
+
+            this.convertToFiat(this.state.amount);
+            this.validateAndDisplayFee(true);
         }
     }
 
