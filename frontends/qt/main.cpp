@@ -13,6 +13,8 @@
 #include <QSettings>
 #include <iostream>
 #include <string>
+#include <QSystemTrayIcon>
+
 #include <set>
 
 #include "libserver.h"
@@ -154,5 +156,9 @@ int main(int argc, char *argv[])
             workerThread.wait();
         });
 
+    auto bla = QIcon(":/trayicon.png");
+    auto trayIcon = new QSystemTrayIcon(bla, &a);
+    trayIcon->show();
+    trayIcon->showMessage("TITLE", "BODY");
     return a.exec();
 }
