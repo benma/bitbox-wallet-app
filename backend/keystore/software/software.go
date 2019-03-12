@@ -81,8 +81,8 @@ func (keystore *Keystore) Identifier() (string, error) {
 }
 
 // HasSecureOutput implements keystore.Keystore.
-func (keystore *Keystore) HasSecureOutput(*signing.Configuration, coin.Coin) (bool, error) {
-	return false, nil
+func (keystore *Keystore) HasSecureOutput(*signing.Configuration, coin.Coin) (bool, bool, error) {
+	return false, false, nil
 }
 
 // OutputAddress implements keystore.Keystore.

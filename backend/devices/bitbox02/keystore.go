@@ -39,15 +39,16 @@ func (keystore *keystore) CosignerIndex() int {
 }
 
 // HasSecureOutput implements keystore.Keystore.
-func (keystore *keystore) HasSecureOutput(configuration *signing.Configuration, coin coinpkg.Coin) (bool, error) {
+func (keystore *keystore) HasSecureOutput(configuration *signing.Configuration, coin coinpkg.Coin) (bool, bool, error) {
 	_, ok := msgCoinMap[coin.Code()]
-	return ok, nil
+	optional := false
+	return ok, optional, nil
 }
 
 // OutputAddress implements keystore.Keystore.
 func (keystore *keystore) OutputAddress(
 	configuration *signing.Configuration, coin coinpkg.Coin) error {
-	hasSecureOutput, err := keystore.HasSecureOutput(configuration, coin)
+	hasSecureOutput, _, err := keystore.HasSecureOutput(configuration, coin)
 	if err != nil {
 		return err
 	}

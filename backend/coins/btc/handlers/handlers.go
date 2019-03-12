@@ -65,6 +65,7 @@ func NewHandlers(
 	handleFunc("/tx-proposal", handlers.ensureAccountInitialized(handlers.getAccountTxProposal)).Methods("POST")
 	handleFunc("/receive-addresses", handlers.ensureAccountInitialized(handlers.getReceiveAddresses)).Methods("GET")
 	handleFunc("/verify-address", handlers.ensureAccountInitialized(handlers.postVerifyAddress)).Methods("POST")
+	handleFunc("/has-secure-output", handlers.ensureAccountInitialized(handlers.getHasSecureOutput)).Methods("GET")
 	handleFunc("/convert-to-legacy-address", handlers.ensureAccountInitialized(handlers.postConvertToLegacyAddress)).Methods("POST")
 	return handlers
 }
@@ -476,6 +477,17 @@ func (handlers *Handlers) postVerifyAddress(r *http.Request) (interface{}, error
 		return nil, errp.WithStack(err)
 	}
 	return handlers.account.VerifyAddress(addressID)
+}
+
+func (handlers *Handlers) getHasSecureOutput(r *http.Request) (interface{}, error) {
+	hasSecureOutput, optional, err := handlers.account.HasSecureOutput()
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"hasSecureOutput": hasSecureOutput,
+		"optional":        optional,
+	}, nil
 }
 
 func (handlers *Handlers) postConvertToLegacyAddress(r *http.Request) (interface{}, error) {

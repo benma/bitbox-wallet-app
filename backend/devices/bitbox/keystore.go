@@ -48,18 +48,19 @@ func (keystore *keystore) CosignerIndex() int {
 
 // HasSecureOutput implements keystore.Keystore.
 func (keystore *keystore) HasSecureOutput(
-	configuration *signing.Configuration, coin coin.Coin) (bool, error) {
+	configuration *signing.Configuration, coin coin.Coin) (bool, bool, error) {
 	deviceInfo, err := keystore.dbb.DeviceInfo()
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
-	return deviceInfo.Pairing && keystore.dbb.HasMobileChannel() && configuration.Singlesig(), nil
+	optional := true
+	return deviceInfo.Pairing && keystore.dbb.HasMobileChannel() && configuration.Singlesig(), optional, nil
 }
 
 // OutputAddress implements keystore.Keystore.
 func (keystore *keystore) OutputAddress(
 	configuration *signing.Configuration, coin coin.Coin) error {
-	hasSecureOutput, err := keystore.HasSecureOutput(configuration, coin)
+	hasSecureOutput, _, err := keystore.HasSecureOutput(configuration, coin)
 	if err != nil {
 		return err
 	}

@@ -45,6 +45,7 @@ type Interface interface {
 	TxProposal(string, coin.SendAmount, FeeTargetCode, map[wire.OutPoint]struct{}, []byte) (
 		coin.Amount, coin.Amount, coin.Amount, error)
 	GetUnusedReceiveAddresses() []Address
+	HasSecureOutput() (bool, bool, error)
 	VerifyAddress(addressID string) (bool, error)
 	ConvertToLegacyAddress(addressID string) (btcutil.Address, error)
 	Keystores() *keystore.Keystores
