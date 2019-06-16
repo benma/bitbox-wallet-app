@@ -18,6 +18,7 @@ package bitbox02
 import (
 	"bytes"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base32"
 	"fmt"
 	"math/big"
@@ -642,6 +643,24 @@ func (device *Device) queryBtcSign(request proto.Message) (
 
 }
 
+// antiNonceSidechanVerify verifies that hostNonce was used to tweak the nonce during signature
+// generation according to k' = k + H(clientCommitment, hostNonce) by checking that
+// k'*G = clientCommitment + H(clientCommitment, hostNonce)*G.
+func antiNonceSidechanVerify(
+	hostNonce []byte, clientCommitment []byte, signature *btcec.Signature) (bool, error) {
+	clientCommitmentPubkey, err := btcec.ParsePubKey(clientCommitment, btcec.S256())
+	if err != nil {
+		return false, errp.WithStack(err)
+	}
+	curve := clientCommitmentPubkey.Curve
+	// Compute R = R1 + H(R1, host_nonce)*G.
+	tweak := sha256.Sum256(append(clientCommitment, hostNonce...))
+	tx, ty := curve.ScalarBaseMult(tweak[:])
+	x, _ := curve.Add(clientCommitmentPubkey.X, clientCommitmentPubkey.Y, tx, ty)
+	x.Mod(x, curve.Params().N)
+	return x.Cmp(signature.R) == 0, nil
+}
+
 // BTCSign signs a bitcoin or bitcoin-like transaction.
 func (device *Device) BTCSign(
 	btcProposedTx *btc.ProposedTransaction) ([]*btcec.Signature, error) {
@@ -675,33 +694,64 @@ func (device *Device) BTCSign(
 	if err != nil {
 		return nil, err
 	}
+
+	queryInput := func(inputIndex uint32, data []byte) (*messages.BTCSignNextResponse, error) {
+		txIn := tx.TxIn[inputIndex] // requested input
+		prevOut := btcProposedTx.PreviousOutputs[txIn.PreviousOutPoint]
+		return device.queryBtcSign(&messages.Request{
+			Request: &messages.Request_BtcSignInput{
+				BtcSignInput: &messages.BTCSignInputRequest{
+					PrevOutHash:  txIn.PreviousOutPoint.Hash[:],
+					PrevOutIndex: txIn.PreviousOutPoint.Index,
+					PrevOutValue: uint64(prevOut.Value),
+					Sequence:     txIn.Sequence,
+					Keypath: btcProposedTx.GetAddress(prevOut.ScriptHashHex()).
+						Configuration.AbsoluteKeypath().ToUInt32(),
+					Data: data,
+				}}})
+	}
+
 	for {
 		switch next.Type {
-		case messages.BTCSignNextResponse_INPUT:
-			inputIndex := next.Index
-			txIn := tx.TxIn[inputIndex] // requested input
-			prevOut := btcProposedTx.PreviousOutputs[txIn.PreviousOutPoint]
-
-			next, err = device.queryBtcSign(&messages.Request{
-				Request: &messages.Request_BtcSignInput{
-					BtcSignInput: &messages.BTCSignInputRequest{
-						PrevOutHash:  txIn.PreviousOutPoint.Hash[:],
-						PrevOutIndex: txIn.PreviousOutPoint.Index,
-						PrevOutValue: uint64(prevOut.Value),
-						Sequence:     txIn.Sequence,
-						Keypath: btcProposedTx.GetAddress(prevOut.ScriptHashHex()).
-							Configuration.AbsoluteKeypath().ToUInt32(),
-					}}})
+		case messages.BTCSignNextResponse_INPUT_PASS1:
+			next, err = queryInput(next.Index, nil)
 			if err != nil {
 				return nil, err
 			}
-			if next.HasSignature {
-				sigR := big.NewInt(0).SetBytes(next.Signature[:32])
-				sigS := big.NewInt(0).SetBytes(next.Signature[32:])
-				signatures[inputIndex] = &btcec.Signature{
-					R: sigR,
-					S: sigS,
-				}
+		case messages.BTCSignNextResponse_INPUT_PASS2a:
+			nonce := random.BytesOrPanic(32)
+			commitment := sha256.Sum256(nonce)
+			inputIndex := next.Index
+
+			// Every input is processed twice in a row. First call to exchange nonce commitments,
+			// the 2nd to get the signature and verify that the host nonce was used by the signer.
+
+			// a) nonce commitment
+			next, err = queryInput(inputIndex, commitment[:])
+			if err != nil {
+				return nil, err
+			}
+			if next.Type != messages.BTCSignNextResponse_INPUT_PASS2b || next.Index != inputIndex {
+				return nil, errp.New("unexpected reply")
+			}
+			clientCommitment := next.Data[:btcec.PubKeyBytesLenCompressed]
+
+			// b) signature
+			next, err = queryInput(next.Index, nonce)
+			if err != nil {
+				return nil, err
+			}
+			signatures[inputIndex] = &btcec.Signature{
+				R: big.NewInt(0).SetBytes(next.Data[:32]),
+				S: big.NewInt(0).SetBytes(next.Data[32:]),
+			}
+
+			verified, err := antiNonceSidechanVerify(nonce, clientCommitment, signatures[inputIndex])
+			if err != nil {
+				return nil, err
+			}
+			if !verified {
+				return nil, errp.Newf("could not verify host nonce contribution in input %d", inputIndex)
 			}
 		case messages.BTCSignNextResponse_OUTPUT:
 			txOut := tx.TxOut[next.Index] // requested output
@@ -739,6 +789,8 @@ func (device *Device) BTCSign(
 			}
 		case messages.BTCSignNextResponse_DONE:
 			return signatures, nil
+		default:
+			return nil, errp.New("unexpected reply")
 		}
 	}
 }

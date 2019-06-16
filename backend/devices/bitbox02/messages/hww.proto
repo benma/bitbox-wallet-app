@@ -149,15 +149,18 @@ message BTCSignInitRequest {
 
 message BTCSignNextResponse {
   enum Type {
-    INPUT = 0;
+    INPUT_PASS1 = 0;
     OUTPUT = 1;
-    DONE = 2;
+    INPUT_PASS2a = 2;
+    INPUT_PASS2b = 3;
+    DONE = 4;
   }
   Type type = 1;
   uint32 index = 2;
-  bool has_signature = 3; // only as a response to BTCSignInputRequest
-  // 64 bytes (32 bytes big endian R, 32 bytes big endian S). Only if has_signature is true.
-  bytes signature = 4;
+  // Response payload.
+  // For INPUT_PASS2a: 33 byte client nonce commitment
+  // Fior INPUT_PASS2b: 64 bytes (32 bytes big endian R, 32 bytes big endian S).
+  bytes data = 4;
 }
 
 message BTCSignInputRequest {
@@ -166,6 +169,7 @@ message BTCSignInputRequest {
   uint64 prevOutValue = 3;
   uint32 sequence = 4; // reserved, must be 0xffffffff
   repeated uint32 keypath = 6; // all inputs must be ours.
+  bytes data = 7;
 }
 
 enum BTCOutputType {
@@ -189,11 +193,13 @@ message SetMnemonicPassphraseEnabledRequest {
   bool enabled = 1;
 }
 
+// Deprecated, last used in v1.0.0
 message PerformAttestationRequest {
   // 32 bytes challenge.
   bytes challenge = 1;
 }
 
+// Deprecated, last used in v1.0.0
 message PerformAttestationResponse {
   bytes bootloader_hash = 1;
   bytes device_pubkey = 2;
