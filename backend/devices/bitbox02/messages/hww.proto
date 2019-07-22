@@ -149,23 +149,34 @@ message BTCSignInitRequest {
 
 message BTCSignNextResponse {
   enum Type {
-    INPUT = 0;
+    INPUT_PASS1 = 0;
     OUTPUT = 1;
-    DONE = 2;
+    INPUT_PASS2_COMMIT = 2;
+    INPUT_PASS2_SIGN = 3;
+    DONE = 4;
   }
   Type type = 1;
   uint32 index = 2;
-  bool has_signature = 3; // only as a response to BTCSignInputRequest
-  // 64 bytes (32 bytes big endian R, 32 bytes big endian S). Only if has_signature is true.
-  bytes signature = 4;
+  // Response payload.
+  // For INPUT_PASS2_COMMIT: 65 byte client nonce commitment (uncompressed pubkey)
+  // For INPUT_PASS2_SIGN: 64 bytes (32 bytes big endian R, 32 bytes big endian S).
+  bytes data = 4;
 }
 
 message BTCSignInputRequest {
-  bytes prevOutHash = 1;
-  uint32 prevOutIndex = 2;
-  uint64 prevOutValue = 3;
-  uint32 sequence = 4; // reserved, must be 0xffffffff
-  repeated uint32 keypath = 6; // all inputs must be ours.
+  message Input {
+    bytes prevOutHash = 1;
+    uint32 prevOutIndex = 2;
+    uint64 prevOutValue = 3;
+    uint32 sequence = 4; // reserved, must be 0xffffffff
+    repeated uint32 keypath = 6; // all inputs must be ours.
+    bytes host_nonce_commitment = 7; // only needed in INPUT_PASS2_COMMIT
+  }
+
+  oneof request {
+    Input input = 1;
+    SignRequest sign = 2;
+  }
 }
 
 enum BTCOutputType {
@@ -228,11 +239,11 @@ message ETHPubRequest {
 message ETHSignRequest {
   ETHCoin coin = 1;
   repeated uint32 keypath = 2;
-  bytes nonce = 3;
-  bytes gas_price = 4;
-  bytes gas_limit = 5;
-  bytes recipient = 6;
-  bytes value = 7;
+  bytes nonce = 3; // smallest big endian serialization, max. 16 bytes
+  bytes gas_price = 4; // smallest big endian serialization, max. 16 bytes
+  bytes gas_limit = 5; // smallest big endian serialization, max. 16 bytes
+  bytes recipient = 6; // 20 byte recipient
+  bytes value = 7; // smallest big endian serialization, max. 32 bytes
   bytes data = 8;
 }
 
@@ -252,6 +263,10 @@ message ETHResponse {
     PubResponse pub = 1;
     ETHSignResponse sign = 2;
   }
+}
+
+message SignRequest {
+  bytes host_nonce = 1;
 }
 
 message Request {
