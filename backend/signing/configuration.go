@@ -226,7 +226,7 @@ func (configuration *Configuration) UnmarshalJSON(bytes []byte) error {
 	return nil
 }
 
-// Hash returns a hash of the configuration.
+// Hash returns a hash of the configuration in hex format.
 func (configuration *Configuration) Hash() string {
 	hash := sha256.Sum256(jsonp.MustMarshal(configuration))
 	return hex.EncodeToString(hash[:])
@@ -239,4 +239,21 @@ func (configuration *Configuration) String() string {
 			configuration.SigningThreshold(), configuration.NumberOfSigners())
 	}
 	return fmt.Sprintf("single sig, scriptType: %s", configuration.scriptType)
+}
+
+// Configuration is a collection of configurations.
+type Configurations []*Configuration
+
+// Hash returns a hash of all configurations in hex format. It is defined as
+// `sha256(<32 bytes hash 1>|<32 bytes hash 2>|...)`.
+func (configs Configurations) Hash() string {
+	h := sha256.New()
+	for _, cfg := range configs {
+		hash, err := hex.DecodeString(cfg.Hash())
+		if err != nil {
+			panic(errp.WithStack(err))
+		}
+		h.Write(hash)
+	}
+	return hex.EncodeToString(h.Sum(nil))
 }
