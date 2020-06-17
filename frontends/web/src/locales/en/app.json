@@ -653,10 +653,6 @@
         "title": "What is an extended public key?"
       }
     },
-    "accountLegacyConvert": {
-      "text": "Go to the Bitcoin account, select receive and copy the address. Go back to your legacy account, click send, paste the copied address and tick send all. Then sign and send to move all your coins in a single transaction.",
-      "title": "How can I move my coins out of the Legacy account?"
-    },
     "accountRates": {
       "link": {
         "text": "www.cryptocompare.com",

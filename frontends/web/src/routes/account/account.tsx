@@ -52,7 +52,7 @@ interface LoadedAccountProps {
 }
 
 export interface AccountInfo {
-    signingConfiguration: SigningConfigurationInterface;
+    signingConfigurations: SigningConfigurationInterface[];
 }
 
 interface State {
@@ -227,14 +227,6 @@ class Account extends Component<Props, State> {
         });
     }
 
-    private isLegacy = (account: AccountInterface, accountInfo?: AccountInfo): boolean => {
-        if (!accountInfo) {
-            return false;
-        }
-        return (account.coinCode === 'btc' || account.coinCode === 'tbtc') &&
-            accountInfo.signingConfiguration.scriptType === 'p2pkh';
-    }
-
     private deviceIDs = (devices: Devices) => {
         return Object.keys(devices);
     }
@@ -261,7 +253,6 @@ class Account extends Component<Props, State> {
             balance,
             hasCard,
             exported,
-            accountInfo,
             fatalError,
         }: State) {
         const account = accounts &&
@@ -361,9 +352,6 @@ class Account extends Component<Props, State> {
                     )}
                     {transactions !== undefined && transactions.length > 0 && (
                         <Entry key="accountTransactionTime" entry={t('guide.accountTransactionTime')} />
-                    )}
-                    {this.isLegacy(account, accountInfo) && (
-                        <Entry key="accountLegacyConvert" entry={t('guide.accountLegacyConvert')} />
                     )}
                     {transactions !== undefined &&  transactions.length > 0 && (
                         <Entry key="accountTransactionAttributesGeneric" entry={t('guide.accountTransactionAttributesGeneric')} />

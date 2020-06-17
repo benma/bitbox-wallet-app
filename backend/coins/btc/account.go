@@ -437,33 +437,36 @@ func XPubVersionForScriptType(coin *Coin, scriptType signing.ScriptType) [4]byte
 func (account *Account) Info() *accounts.Info {
 	// The internal extended key representation always uses he same version bytes (prefix xpub). We
 	// convert it here to the account-specific version (zpub, ypub, tpub, ...).
-	xpubs := []*hdkeychain.ExtendedKey{}
-	// TODO unified-accounts
-	for _, xpub := range account.subaccounts[0].signingConfiguration.ExtendedPublicKeys() {
-		if xpub.IsPrivate() {
-			panic("xpub can't be private")
+	signingConfigurations := make([]*signing.Configuration, len(account.subaccounts))
+	for idx, subacc := range account.subaccounts {
+		xpubs := []*hdkeychain.ExtendedKey{}
+		for _, xpub := range subacc.signingConfiguration.ExtendedPublicKeys() {
+			if xpub.IsPrivate() {
+				panic("xpub can't be private")
+			}
+			xpubStr := xpub.String()
+			xpubCopy, err := hdkeychain.NewKeyFromString(xpubStr)
+			if err != nil {
+				panic(err)
+			}
+			xpubCopy.SetNet(
+				&chaincfg.Params{
+					HDPublicKeyID: XPubVersionForScriptType(account.
+						coin, subacc.signingConfiguration.ScriptType()),
+				},
+			)
+			xpubs = append(xpubs, xpubCopy)
 		}
-		xpubStr := xpub.String()
-		xpubCopy, err := hdkeychain.NewKeyFromString(xpubStr)
-		if err != nil {
-			panic(err)
-		}
-		xpubCopy.SetNet(
-			&chaincfg.Params{
-				HDPublicKeyID: XPubVersionForScriptType(account.
-					coin, account.subaccounts[0].signingConfiguration.ScriptType()),
-			},
+		signingConfigurations[idx] = signing.NewConfiguration(
+			subacc.signingConfiguration.ScriptType(),
+			subacc.signingConfiguration.AbsoluteKeypath(),
+			xpubs,
+			subacc.signingConfiguration.Address(),
+			subacc.signingConfiguration.SigningThreshold(),
 		)
-		xpubs = append(xpubs, xpubCopy)
 	}
 	return &accounts.Info{
-		SigningConfiguration: signing.NewConfiguration(
-			account.subaccounts[0].signingConfiguration.ScriptType(),
-			account.subaccounts[0].signingConfiguration.AbsoluteKeypath(),
-			xpubs,
-			account.subaccounts[0].signingConfiguration.Address(),
-			account.subaccounts[0].signingConfiguration.SigningThreshold(),
-		),
+		SigningConfigurations: signingConfigurations,
 	}
 }
 

@@ -859,9 +859,8 @@ func (handlers *Handlers) postExportAccountSummary(_ *http.Request) (interface{}
 		"Balance",
 		"Unit",
 		"Type",
-		"Xpub",
+		"Xpubs",
 		"Address",
-		"Script Type",
 	})
 	if err != nil {
 		return nil, errp.WithStack(err)
@@ -885,25 +884,27 @@ func (handlers *Handlers) postExportAccountSummary(_ *http.Request) (interface{}
 		var accountType string
 		var xpubs string
 		var address string
-		var scriptType string
-		if signingConfiguration := account.Info().SigningConfiguration; signingConfiguration.IsAddressBased() {
+		signingConfigurations := account.Info().SigningConfigurations
+		if len(signingConfigurations) == 1 && signingConfigurations[0].IsAddressBased() {
 			accountType = "address"
-			address = signingConfiguration.Address()
+			address = signingConfigurations[0].Address()
 		} else {
-			accountType = "xpub"
-			for index, xpub := range account.Info().SigningConfiguration.ExtendedPublicKeys() {
+			accountType = "xpubs"
+			for index, signingConfiguration := range signingConfigurations {
+				if len(signingConfiguration.ExtendedPublicKeys()) != 1 {
+					return nil, errp.New("multisig not supported in the export yet")
+				}
+				xpub := signingConfiguration.ExtendedPublicKeys()[0]
 				if index > 0 {
 					xpubs += "; "
 				}
 				xpubs += xpub.String()
 			}
-			switch specificAccount := account.(type) {
-			case *btc.Account:
-				scriptType = string(specificAccount.Info().SigningConfiguration.ScriptType())
+
+			switch account.(type) {
 			case *eth.Account:
-				address = signingConfiguration.Address()
+				address = signingConfigurations[0].Address()
 			default:
-				return nil, nil
 			}
 		}
 
@@ -915,7 +916,6 @@ func (handlers *Handlers) postExportAccountSummary(_ *http.Request) (interface{}
 			accountType,
 			xpubs,
 			address,
-			scriptType,
 		})
 		if err != nil {
 			return nil, errp.WithStack(err)
