@@ -738,20 +738,21 @@ func (account *Account) Transactions() ([]accounts.Transaction, error) {
 }
 
 // GetUnusedReceiveAddresses returns a number of unused addresses.
-func (account *Account) GetUnusedReceiveAddresses() []accounts.Address {
+func (account *Account) GetUnusedReceiveAddresses() []accounts.Addresses {
 	account.synchronizer.WaitSynchronized()
 	defer account.RLock()()
 	account.log.Debug("Get unused receive address")
-	var addresses []accounts.Address
-	// TODO unified-accounts
-	for idx, address := range account.subaccounts[0].receiveAddresses.GetUnused() {
-		if idx >= receiveAddressesLimit {
-			// Limit to gap limit for receive addresses, even if the actual limit is higher when
-			// scanning.
-			break
-		}
+	addresses := make([]accounts.Addresses, len(account.subaccounts))
+	for subaccIdx, subacc := range account.subaccounts {
+		for idx, address := range subacc.receiveAddresses.GetUnused() {
+			if idx >= receiveAddressesLimit {
+				// Limit to gap limit for receive addresses, even if the actual limit is higher when
+				// scanning.
+				break
+			}
 
-		addresses = append(addresses, address)
+			addresses[subaccIdx].Addresses = append(addresses[subaccIdx].Addresses, address)
+		}
 	}
 	return addresses
 }

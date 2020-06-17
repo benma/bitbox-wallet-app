@@ -443,18 +443,30 @@ func (handlers *Handlers) getAccountStatus(_ *http.Request) (interface{}, error)
 	return status, nil
 }
 
+type jsonAddress struct {
+	Address   string `json:"address"`
+	AddressID string `json:"addressID"`
+}
+
+type jsonAddresses struct {
+	Addresses []jsonAddress `json:"addresses"`
+}
+
 func (handlers *Handlers) getReceiveAddresses(_ *http.Request) (interface{}, error) {
-	addresses := []interface{}{}
-	for _, address := range handlers.account.GetUnusedReceiveAddresses() {
-		addresses = append(addresses, struct {
-			Address   string `json:"address"`
-			AddressID string `json:"addressID"`
-		}{
-			Address:   address.EncodeForHumans(),
-			AddressID: address.ID(),
+	var addressesList []jsonAddresses
+	for _, addresses := range handlers.account.GetUnusedReceiveAddresses() {
+		addrs := []jsonAddress{}
+		for _, address := range addresses.Addresses {
+			addrs = append(addrs, jsonAddress{
+				Address:   address.EncodeForHumans(),
+				AddressID: address.ID(),
+			})
+		}
+		addressesList = append(addressesList, jsonAddresses{
+			Addresses: addrs,
 		})
 	}
-	return addresses, nil
+	return addressesList, nil
 }
 
 func (handlers *Handlers) postVerifyAddress(r *http.Request) (interface{}, error) {
