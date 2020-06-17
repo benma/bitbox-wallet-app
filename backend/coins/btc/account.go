@@ -236,6 +236,10 @@ func (account *Account) defaultGapLimits(signingConfiguration *signing.Configura
 // gapLimits gets the gap limits as stored in the account configuration, and defaults to
 // `defaultGapLimits()` if there is no configuration or the configuration limits are smaller than
 // the default limits.
+//
+// The default gap limits can be different for each subaccount (e.g. legacy script type needs a
+// higher gap limit), but if the gap limits are forced and stored (user wants higher gap limits),
+// one set of gap limits is used for all subaccounts for simplicity.
 func (account *Account) gapLimits(
 	signingConfiguration *signing.Configuration) (types.GapLimits, error) {
 	dbTx, err := account.db.Begin()
@@ -367,16 +371,14 @@ func (account *Account) Initialize() error {
 		account.coin.Net(), account.db, theHeaders, account.synchronizer,
 		account.blockchain, account.notifier, account.log)
 
-	// TODO: unified-accounts
-	gapLimits, err := account.gapLimits(signingConfigurations[0])
-	if err != nil {
-		return err
-	}
-
-	account.log.Infof("gap limits: receive=%d, change=%d", gapLimits.Receive, gapLimits.Change)
-
 	for _, signingConfiguration := range signingConfigurations {
 		signingConfiguration := signingConfiguration
+
+		gapLimits, err := account.gapLimits(signingConfiguration)
+		if err != nil {
+			return err
+		}
+		account.log.Infof("gap limits: receive=%d, change=%d", gapLimits.Receive, gapLimits.Change)
 
 		var subacc subaccount
 		subacc.signingConfiguration = signingConfiguration
