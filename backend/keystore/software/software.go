@@ -92,6 +92,11 @@ func (keystore *Keystore) SupportsAccount(
 	}
 }
 
+// SupportsUnifiedAccounts implements keystore.Keystore.
+func (keystore *Keystore) SupportsUnifiedAccounts() bool {
+	return true
+}
+
 // Identifier implements keystore.Keystore.
 func (keystore *Keystore) Identifier() (string, error) {
 	return keystore.identifier, nil
