@@ -879,21 +879,8 @@ func (handlers *Handlers) getAccountSummary(_ *http.Request) (interface{}, error
 			continue
 		}
 
-		timeseriesDaily, err := txs.Timeseries(
-			time.Now().AddDate(-4, 0, 0).Truncate(24*time.Hour).Add(time.Hour),
-			hourlyFrom,
-			24*time.Hour,
-		)
-		if errp.Cause(err) == errors.ErrNotAvailable {
-			handlers.log.WithField("coin", account.Coin().Code()).Info("ChartDataMissing")
-			chartDataMissing = true
-			continue
-		}
-		if err != nil {
-			return nil, err
-		}
-		timeseriesHourly, err := txs.Timeseries(
-			hourlyFrom.Add(time.Hour),
+		timeseries, err := txs.Timeseries(
+			time.Now().AddDate(-4, 0, 0).Truncate(time.Hour),
 			until,
 			time.Hour,
 		)
@@ -905,8 +892,6 @@ func (handlers *Handlers) getAccountSummary(_ *http.Request) (interface{}, error
 		if err != nil {
 			return nil, err
 		}
-
-		timeseries := append(timeseriesDaily, timeseriesHourly...)
 
 		if chartEntries == nil {
 			chartEntries = make([]chartEntry, len(timeseries))
@@ -957,11 +942,19 @@ func (handlers *Handlers) getAccountSummary(_ *http.Request) (interface{}, error
 		}
 	}
 
+	var chartEntriesDaily []chartEntry
+	for _, e := range chartEntries {
+		t := time.Unix(e.Time, 0)
+		if t.Equal(t.Truncate(24 * time.Hour)) {
+			chartEntriesDaily = append(chartEntriesDaily, e)
+		}
+	}
 	return map[string]interface{}{
 		"accounts":         jsonAccounts,
 		"totals":           jsonTotals,
 		"chartDataMissing": chartDataMissing,
-		"chartData":        chartEntries,
+		"chartDataHourly":  chartEntries,
+		"chartDataDaily":   chartEntriesDaily,
 	}, nil
 }
 
