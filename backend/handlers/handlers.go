@@ -954,6 +954,28 @@ func (handlers *Handlers) getAccountSummary(_ *http.Request) (interface{}, error
 
 		addChartData(account.Coin().Code(), timeseriesDaily, chartEntriesDaily)
 		addChartData(account.Coin().Code(), timeseriesHourly, chartEntriesHourly)
+
+		// HACK: We still use the latest prices from CryptoCompare for the account fiat balances
+		// above (displayed in the summary table). Those might deviate from the latest latest
+		// historical prices from coingecko, which results in different total balances in the chart
+		// and the summary table.
+		//
+		// As a temporary workaround, until we use only one source for all prices, we manually add
+		// one final datapoint reflecting the latest price. This can be removed once we stop using
+		// CryptoCompare.
+		now := time.Now().Unix()
+		price := handlers.backend.RatesUpdater().LastForPair(string(account.Coin().Code()), fiat)
+		fiatValue, _ := new(big.Rat).Mul(
+			new(big.Rat).SetFrac(
+				balance.Available().BigInt(),
+				coinDecimals,
+			),
+			new(big.Rat).SetFloat64(price),
+		).Float64()
+		entry := chartEntriesHourly[now]
+		entry.Time = now
+		entry.Value += fiatValue
+		chartEntriesHourly[now] = entry
 	}
 
 	jsonTotals := make(map[coinpkg.Code]accountHandlers.FormattedAmount)

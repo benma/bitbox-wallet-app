@@ -122,6 +122,33 @@ func (updater *RateUpdater) Last() map[string]map[string]float64 {
 	return updater.last
 }
 
+// LastForPair returns the conversion rate for the given (coin, fiat) pair.
+func (updater *RateUpdater) LastForPair(coinCode string, fiat string) float64 {
+	// TODO: use coin.Code
+	key := map[string]string{
+		"btc": "BTC",
+		"ltc": "LTC",
+		"eth": "ETH",
+		// Useful for testing with testnets.
+		"tbtc": "BTC",
+		"rbtc": "BTC",
+		"tltc": "LTC",
+		"teth": "ETH",
+		"reth": "ETH",
+		// ERC20 tokens as used in the backend.
+		// Frontend and app config use unprefixed name, without "eth-erc20-".
+		"eth-erc20-bat":       "BAT",
+		"eth-erc20-dai0x6b17": "DAI",
+		"eth-erc20-link":      "LINK",
+		"eth-erc20-mkr":       "MKR",
+		"eth-erc20-sai0x89d2": "SAI",
+		"eth-erc20-usdc":      "USDC",
+		"eth-erc20-usdt":      "USDT",
+		"eth-erc20-zrx":       "ZRX",
+	}[coinCode]
+	return updater.Last()[key][fiat]
+}
+
 // PriceAt returns a historical exchange rate for the given coin.
 // The returned value may be imprecise if at arg matches no timestamp exactly.
 // In this case, linear interpolation is used as an approximation.
