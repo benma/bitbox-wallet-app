@@ -48,6 +48,12 @@ import USDT from './assets/usdt-color.svg';
 import USDT_GREY from './assets/usdt-white.svg';
 import ZRX from './assets/zrx-color.svg';
 import ZRX_GREY from './assets/zrx-white.svg';
+import WBTC from './assets/wbtc-color.svg';
+import WBTC_GREY from './assets/wbtc-white.svg';
+import PAXG from './assets/paxg-color.svg';
+import PAXG_GREY from './assets/paxg-white.svg';
+import DGX from './assets/dgx-color.svg';
+import DGX_GREY from './assets/dgx-white.svg';
 
 import ShiftLogo from './assets/shift-cryptosecurity-logo.svg';
 import * as style from './logo.css';
@@ -85,6 +91,9 @@ const logoMap = {
     'eth-erc20-bat': [BAT, BAT_GREY],
     'eth-erc20-mkr': [MKR, MKR_GREY],
     'eth-erc20-zrx': [ZRX, ZRX_GREY],
+    'eth-erc20-wbtc': [WBTC, WBTC_GREY],
+    'eth-erc20-paxg': [PAXG, PAXG_GREY],
+    'eth-erc20-dgx': [DGX, DGX_GREY],
 };
 
 interface Props {
