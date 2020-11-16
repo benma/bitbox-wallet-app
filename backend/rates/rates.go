@@ -37,7 +37,7 @@ import (
 )
 
 // TODO: Unify these with geckoCoin map.
-var coins = []string{"BTC", "LTC", "ETH", "USDT", "LINK", "MKR", "ZRX", "SAI", "DAI", "BAT", "USDC"}
+var coins = []string{"BTC", "LTC", "ETH", "USDT", "WBTC", "PAXG", "DGX", "LINK", "MKR", "ZRX", "SAI", "DAI", "BAT", "USDC"}
 
 // TODO: Unify these with geckoFiat map.
 var fiats = []string{"USD", "EUR", "CHF", "GBP", "JPY", "KRW", "CNY", "RUB", "CAD", "AUD", "ILS"}
