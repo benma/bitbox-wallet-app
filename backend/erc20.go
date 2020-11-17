@@ -92,12 +92,6 @@ var erc20Tokens = []erc20Token{
 		unit:  "PAXG",
 		token: erc20.NewToken("0x45804880De22913dAFE09f4980848ECE6EcbAf78", 18),
 	},
-	{
-		code:  "eth-erc20-dgx",
-		name:  "Digix Gold Token",
-		unit:  "DGX",
-		token: erc20.NewToken("0x4f3AfEC4E5a3F2A6a1A411DEF7D7dFe50eE057bF", 9),
-	},
 }
 
 func erc20TokenByCode(code coin.Code) *erc20Token {
