@@ -66,7 +66,6 @@ class Settings extends Component<Props, State> {
         usdc: 'USD Coin',
         wbtc: 'Wrapped BTC',
         paxg: 'Pax Gold',
-        dgx: 'Digix Gold Token',
         link: 'Chainlink',
         bat: 'Basic Attention Token',
         mkr: 'Maker',

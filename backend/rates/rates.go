@@ -37,7 +37,7 @@ import (
 )
 
 // TODO: Unify these with geckoCoin map.
-var coins = []string{"BTC", "LTC", "ETH", "USDT", "WBTC", "PAXG", "DGX", "LINK", "MKR", "ZRX", "SAI", "DAI", "BAT", "USDC"}
+var coins = []string{"BTC", "LTC", "ETH", "USDT", "WBTC", "PAXG", "LINK", "MKR", "ZRX", "SAI", "DAI", "BAT", "USDC"}
 
 // TODO: Unify these with geckoFiat map.
 var fiats = []string{"USD", "EUR", "CHF", "GBP", "JPY", "KRW", "CNY", "RUB", "CAD", "AUD", "ILS"}
@@ -58,9 +58,11 @@ var cryptoCompareCoin = map[string]string{
 	"eth-erc20-dai0x6b17": "DAI",
 	"eth-erc20-link":      "LINK",
 	"eth-erc20-mkr":       "MKR",
+	"eth-erc20-paxg":      "PAXG",
 	"eth-erc20-sai0x89d2": "SAI",
 	"eth-erc20-usdc":      "USDC",
 	"eth-erc20-usdt":      "USDT",
+	"eth-erc20-wbtc":      "WBTC",
 	"eth-erc20-zrx":       "ZRX",
 }
 
