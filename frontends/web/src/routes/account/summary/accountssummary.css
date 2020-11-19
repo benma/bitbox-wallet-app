@@ -53,6 +53,10 @@
     background-color: var(--color-white);
 }
 
+.summaryTableBalance {
+    white-space: nowrap;
+}
+
 .table tfoot th {
     background-color: var(--color-mediumgray);
 }
@@ -106,6 +110,7 @@
 
     .table tbody td::before {
         content: attr(data-label);
+        white-space: nowrap;
     }
 
     .table tbody td:last-child {

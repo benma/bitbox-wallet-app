@@ -77,7 +77,7 @@ class Chart extends Component<Props, State> {
 
     public componentDidUpdate(prev) {
         const { dataDaily, dataHourly } = this.props;
-        if (!this.chart && dataDaily && dataHourly) {
+        if (!this.chart) {
             this.createChart();
         }
         if (
@@ -93,56 +93,58 @@ class Chart extends Component<Props, State> {
 
     private createChart = () => {
         if (this.ref.current) {
-            this.chart = createChart(this.ref.current, {
-                width: this.ref.current.offsetWidth,
-                height: this.height,
-                handleScroll: false,
-                handleScale: false,
-                crosshair: {
-                    vertLine: {
-                        visible: false,
-                        labelVisible: false,
+            if (!this.chart) {
+                this.chart = createChart(this.ref.current, {
+                    width: this.ref.current.offsetWidth,
+                    height: this.height,
+                    handleScroll: false,
+                    handleScale: false,
+                    crosshair: {
+                        vertLine: {
+                            visible: false,
+                            labelVisible: false,
+                        },
+                        horzLine: {
+                            visible: false,
+                            labelVisible: false,
+                        },
+                        mode: 1,
                     },
-                    horzLine: {
-                        visible: false,
-                        labelVisible: false,
+                    grid: {
+                        vertLines: {
+                            visible: false,
+                        },
+                        horzLines: {
+                            color: '#dedede',
+                            style: LineStyle.Solid,
+                            visible: true,
+                        },
                     },
-                    mode: 1,
-                },
-                grid: {
-                    vertLines: {
-                        visible: false,
+                    layout: {
+                        backgroundColor: '#F5F5F5',
+                        fontSize: 11,
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Ubuntu", "Roboto", "Oxygen", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
+                        textColor: '#1D1D1B',
                     },
-                    horzLines: {
-                        color: '#dedede',
-                        style: LineStyle.Solid,
+                    leftPriceScale: {
+                        borderVisible: false,
+                        drawTicks: false,
                         visible: true,
+                        entireTextOnly: true,
                     },
-                },
-                layout: {
-                    backgroundColor: '#F5F5F5',
-                    fontSize: 11,
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Ubuntu", "Roboto", "Oxygen", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
-                    textColor: '#1D1D1B',
-                },
-                leftPriceScale: {
-                    borderVisible: false,
-                    drawTicks: false,
-                    visible: true,
-                    entireTextOnly: true,
-                },
-                localization: {
-                    locale: this.props.i18n.language,
-                },
-                rightPriceScale: {
-                    visible: false,
-                    drawTicks: false,
-                },
-                timeScale: {
-                    borderVisible: false,
-                    timeVisible: false,
-                }
-            });
+                    localization: {
+                        locale: this.props.i18n.language,
+                    },
+                    rightPriceScale: {
+                        visible: false,
+                        drawTicks: false,
+                    },
+                    timeScale: {
+                        borderVisible: false,
+                        timeVisible: false,
+                    }
+                });
+            }
             if (this.props.dataDaily !== undefined) {
                 this.lineSeries = this.chart.addAreaSeries({
                     priceLineVisible: false,
@@ -161,7 +163,9 @@ class Chart extends Component<Props, State> {
                     this.chart.subscribeCrosshairMove(this.handleCrosshair as MouseEventHandler);
                 }
             }
-            this.chart.timeScale().fitContent();
+            if (this.chart) {
+                this.chart.timeScale().fitContent();
+            }
             window.addEventListener('resize', this.onResize);
             setTimeout(() => this.ref.current.classList.remove(styles.invisible), 200);
         }
@@ -177,10 +181,6 @@ class Chart extends Component<Props, State> {
             }
             this.chart.resize(this.ref.current.offsetWidth, this.height);
         }, 200);
-    }
-
-    private getCurrentTotal = () => {
-        return this.props.total;
     }
 
     private getUTCRange = () => {
@@ -300,7 +300,7 @@ class Chart extends Component<Props, State> {
             return;
         }
         const valueFrom = data[rangeFrom].value;
-        const valueTo = this.getCurrentTotal();
+        const valueTo = this.props.total;
         const valueDiff = valueTo ? valueTo - valueFrom : 0;
         this.setState({
             difference: ((valueDiff / valueFrom) * 100),
@@ -349,7 +349,7 @@ class Chart extends Component<Props, State> {
     }
 
     public render(
-        { t, dataDaily, fiatUnit, isUpToDate }: RenderableProps<Props>,
+        { t, fiatUnit, dataDaily, isUpToDate, total }: RenderableProps<Props>,
         {
             difference,
             diffSince,
@@ -368,7 +368,6 @@ class Chart extends Component<Props, State> {
                 </p>
             );
         }
-
         const diff = difference && Number.isFinite(difference) ? (
             <span className={styles[difference < 0 ? 'down' : 'up']} title={diffSince}>
                 <span className={styles.arrow}>
@@ -381,14 +380,13 @@ class Chart extends Component<Props, State> {
             </span>
         ) : null;
 
-        const currentTotal = this.getCurrentTotal();
         return (
             <section className={styles.chart}>
                 <header>
                     <div className={styles.summary}>
-                        {currentTotal ? (
+                        {total ? (
                             <div className={styles.totalValue}>
-                                {formatCurrency(currentTotal, fiatUnit)}
+                                {formatCurrency(total, fiatUnit)}
                                 <span className={styles.totalUnit}>{fiatUnit}</span>
                             </div>
                         ) : null}
