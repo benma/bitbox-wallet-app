@@ -19,51 +19,21 @@
 }
 
 .syncMessage {
-    height: 16px;
-    width: 100%;
-    max-width: var(--content-width);
-    font-size: var(--size-small);
     color: var(--color-secondary);
-    text-align: right;
+    font-size: var(--size-small);
+    height: 16px;
+    line-height: 14px;
     margin: 0 auto;
     margin-bottom: 1px;
+    max-width: var(--content-width);
     padding: 0 var(--spacing-large);
+    text-align: right;
+    width: 100%;
 }
 
 .syncText {
     display: inline-block;
     height: 100%;
-}
-
-.spinnerContainer {
-    position: relative;
-    display: inline-block;
-}
-
-.spinner {
-    color: var(--color-blue);
-}
-
-.spinner:after {
-    position: relative;
-    top: 2px;
-    animation: changeContent .8s linear infinite;
-    display: block;
-    content: "⠋";
-    font-size: 14px;
-    margin-left: 3px;
-}
-
-@keyframes changeContent {
-    10% { content: "⠙"; }
-    20% { content: "⠹"; }
-    30% { content: "⠸"; }
-    40% { content: "⠼"; }
-    50% { content: "⠴"; }
-    60% { content: "⠦"; }
-    70% { content: "⠧"; }
-    80% { content: "⠇"; }
-    90% { content: "⠏"; }
 }
 
 @media (max-width: 900px) {
