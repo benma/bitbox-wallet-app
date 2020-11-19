@@ -80,9 +80,9 @@ var erc20Tokens = []erc20Token{
 		unit:  "ZRX",
 		token: erc20.NewToken("0xe41d2489571d322189246dafa5ebde1f4699f498", 18),
 	},
-		{
+	{
 		code:  "eth-erc20-wbtc",
-		name:  "Wrapped BTC",
+		name:  "Wrapped Bitcoin",
 		unit:  "WBTC",
 		token: erc20.NewToken("0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", 8),
 	},
