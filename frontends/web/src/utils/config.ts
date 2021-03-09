@@ -17,6 +17,32 @@
 import './polyfill';
 import { apiGet, apiPost } from './request';
 
+interface IETHCoinConfig {
+    activeERC20Tokens: string[];
+}
+
+export interface IConfig {
+    backend: {
+        proxy: {
+            useProxy: boolean;
+            proxyAddress: string;
+        };
+        bitcoinActive: boolean;
+        litecoinActive: boolean;
+        ethereumActive: boolean;
+        splitAccounts: boolean;
+        eth: IETHCoinConfig;
+        fiatList: string[];
+        mainFiat: string;
+        userLanguage: string;
+    };
+    frontend: {
+        guideShown?: boolean;
+        expertFee?: boolean;
+        coinControl?: boolean;
+    };
+}
+
 // extConfig is a way to set config values which are inserted
 // externally by templating engines (code generation). A default value
 // is provided in case the file wasn't generated but used directly,
@@ -32,10 +58,13 @@ export function extConfig(key, defaultValue) {
 // expects an object with a backend or frontend key
 // i.e. { frontend: { language }}
 // returns a promise and passes the new config
-let pendingConfig = {};
-export function setConfig(object) {
+let pendingConfig = {
+    frontend: {},
+    backend: {},
+};
+export function setConfig(object: { frontend?: Object; backend?: Object }) {
     return apiGet('config')
-        .then((currentConfig = {}) => {
+        .then((currentConfig: IConfig) => {
             const nextConfig = Object.assign(currentConfig, {
                 backend: Object.assign({}, currentConfig.backend, pendingConfig.backend, object.backend),
                 frontend: Object.assign({}, currentConfig.frontend, pendingConfig.frontend, object.frontend)
@@ -43,7 +72,10 @@ export function setConfig(object) {
             pendingConfig = nextConfig;
             return apiPost('config', nextConfig)
                 .then(() => {
-                    pendingConfig = {};
+                    pendingConfig = {
+                        frontend: {},
+                        backend: {},
+                    };
                     return nextConfig;
                 });
         });

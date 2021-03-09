@@ -21,11 +21,12 @@ import { Input, Select } from '../../../components/forms';
 import { Fiat } from '../../../components/rates/rates';
 import { load } from '../../../decorators/load';
 import { translate, TranslateProps } from '../../../decorators/translate';
+import { IConfig } from '../../../utils/config';
 import { getCoinCode, isBitcoinBased } from '../utils';
 import * as style from './feetargets.css';
 
 interface LoadedProps {
-    config: any;
+    config: IConfig;
 }
 
 interface FeeTargetsProps {

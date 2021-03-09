@@ -28,7 +28,7 @@ import { Footer, Header } from '../../components/layout';
 import { SettingsButton } from '../../components/settingsButton/settingsButton';
 import { Toggle } from '../../components/toggle/toggle';
 import { translate, TranslateProps } from '../../decorators/translate';
-import { setConfig } from '../../utils/config';
+import { setConfig, IConfig } from '../../utils/config';
 import { debug } from '../../utils/env';
 import { apiGet, apiPost } from '../../utils/request';
 import { FiatSelection } from './components/fiat/fiat';
@@ -42,7 +42,7 @@ type Props = SettingsProps & TranslateProps;
 
 interface State {
     restart: boolean;
-    config: any;
+    config?: IConfig;
     proxyAddress?: string;
     activeProxyDialog: boolean;
 }
@@ -78,7 +78,7 @@ class Settings extends Component<Props, State> {
         super(props);
         this.state = {
             restart: false,
-            config: null,
+            config: undefined,
             proxyAddress: undefined,
             activeProxyDialog: false,
         };
@@ -143,6 +143,9 @@ class Settings extends Component<Props, State> {
         }
         const target = (event.target as HTMLInputElement);
         const tokenCode = target.dataset.tokencode;
+        if (!tokenCode) {
+            return;
+        }
         const eth = config.backend.eth;
         const activeTokens = eth.activeERC20Tokens.filter(val => val !== tokenCode);
         if (target.checked) {
@@ -190,7 +193,7 @@ class Settings extends Component<Props, State> {
 
     private setProxyAddress = () => {
         const config = this.state.config;
-        if (!config) {
+        if (!config || this.state.proxyAddress === undefined) {
             return;
         }
         const proxy = config.backend.proxy;
@@ -335,7 +338,7 @@ class Settings extends Component<Props, State> {
                                                                 </p>
                                                             </div>
                                                             <Toggle
-                                                                checked={config.frontend.expertFee}
+                                                                checked={!!config.frontend.expertFee}
                                                                 id="expertFee"
                                                                 onChange={this.handleToggleFrontendSetting} />
                                                         </div>
@@ -348,7 +351,7 @@ class Settings extends Component<Props, State> {
                                                                 </p>
                                                             </div>
                                                             <Toggle
-                                                                checked={config.frontend.coinControl}
+                                                                checked={!!config.frontend.coinControl}
                                                                 id="coinControl"
                                                                 onChange={this.handleToggleFrontendSetting} />
                                                         </div>

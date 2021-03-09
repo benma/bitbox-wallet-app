@@ -30,6 +30,7 @@ import Status from '../../components/status/status';
 import { Transactions } from '../../components/transactions/transactions';
 import { load } from '../../decorators/load';
 import { translate, TranslateProps } from '../../decorators/translate';
+import { IConfig } from '../../utils/config';
 import { apiGet } from '../../utils/request';
 import { Devices } from '../device/deviceswitch';
 import * as style from './account.css';
@@ -43,7 +44,7 @@ interface AccountProps {
 
 interface LoadedAccountProps {
     moonpayBuySupported: boolean;
-    config: any;
+    config: IConfig;
 }
 
 interface State {
