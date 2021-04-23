@@ -328,6 +328,7 @@ func (backend *Backend) createAndAddAccount(
 	code string,
 	name string,
 	signingConfigurations signing.Configurations,
+	activeTokens []string,
 ) {
 	var account accounts.Interface
 	accountConfig := &accounts.AccountConfig{
@@ -361,6 +362,16 @@ func (backend *Backend) createAndAddAccount(
 	case *eth.Coin:
 		account = eth.NewAccount(accountConfig, specificCoin, backend.log)
 		backend.addAccount(account)
+
+		// Load ERC20 tokens enabled with this Ethereum account.
+		for _, erc20TokenCode := range activeTokens {
+			token, err := backend.Coin(coinpkg.Code(erc20TokenCode))
+			if err != nil {
+				backend.log.WithError(err).Error("could not find ERC20 token")
+				continue
+			}
+			backend.createAndAddAccount(token, erc20TokenCode, token.Name(), signingConfigurations, nil)
+		}
 	default:
 		panic("unknown coin type")
 	}
@@ -465,13 +476,7 @@ func (backend *Backend) createAndAddETHAccount(
 ) {
 	name := coin.Name()
 	log := backend.log.WithField("code", code).WithField("name", name)
-	prefix := "eth-erc20-"
-	if strings.HasPrefix(code, prefix) {
-		if !backend.config.AppConfig().Backend.ETH.ERC20TokenActive(code[len(prefix):]) {
-			log.Info("skipping inactive erc20 token")
-			return
-		}
-	} else if !backend.config.AppConfig().Backend.CoinActive(coin.Code()) {
+	if !backend.config.AppConfig().Backend.CoinActive(coin.Code()) {
 		log.Info("skipping inactive account")
 		return
 	}
@@ -682,10 +687,12 @@ func (backend *Backend) initPersistedAccounts() {
 					fmt.Sprintf("%s-%s", account.Code, signingConfiguration.ScriptType()),
 					suffixedName,
 					signing.Configurations{signingConfiguration},
+					account.ActiveTokens,
 				)
 			}
 		} else {
-			backend.createAndAddAccount(coin, account.Code, account.Name, account.Configurations)
+			backend.createAndAddAccount(
+				coin, account.Code, account.Name, account.Configurations, account.ActiveTokens)
 		}
 	}
 }

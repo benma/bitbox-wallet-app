@@ -37,6 +37,21 @@ type Account struct {
 	// https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki#key-identifiers
 	RootFingerprint []byte                 `json:"rootFingerprint"`
 	Configurations  signing.Configurations `json:"configurations"`
+	// ActiveTokens list the tokens that should be loaded along with the account.  Currently, this
+	// only applies to ETH, and the elements are ERC20 token codes (e.g. "eth-erc20-usdt",
+	// "eth-erc20-bat", etc).
+	ActiveTokens []string `json:"activeTokens"`
+}
+
+// TokenActive returns true if this token is configured to be active.
+// code is the token id, e.g. "eth-erc20-usdt".
+func (account Account) TokenActive(code string) bool {
+	for _, tokenCode := range account.ActiveTokens {
+		if tokenCode == code {
+			return true
+		}
+	}
+	return false
 }
 
 // AccountsConfig persists the list of accounts added to the app.
