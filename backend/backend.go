@@ -415,9 +415,7 @@ func newScriptTypeWithKeypath(scriptType signing.ScriptType, keypath string) scr
 }
 
 // adds a combined BTC account with the given script types.
-//
-// The accountsLock must be held when calling this function.
-func (backend *Backend) createAndAddBTCAccount(
+func (backend *Backend) persistBTCAccount(
 	keystore keystore.Keystore,
 	coin coin.Coin,
 	code string,
@@ -425,6 +423,8 @@ func (backend *Backend) createAndAddBTCAccount(
 ) {
 	name := coin.Name()
 	log := backend.log.WithField("code", code).WithField("name", name)
+	// This used to be a user-facing setting. Now we simply use it for migration to decide which
+	// coins to add by default.
 	if !backend.config.AppConfig().Backend.CoinActive(coin.Code()) {
 		log.Info("skipping inactive account")
 		return
@@ -439,7 +439,7 @@ func (backend *Backend) createAndAddBTCAccount(
 		log.Info("skipping unsupported account")
 		return
 	}
-	log.Info("init account")
+	log.Info("persist account")
 
 	getSigningConfiguration := func(cfg scriptTypeWithKeypath) (*signing.Configuration, error) {
 		extendedPublicKey, err := keystore.ExtendedPublicKey(coin, cfg.keypath)
@@ -464,11 +464,25 @@ func (backend *Backend) createAndAddBTCAccount(
 		}
 		signingConfigurations = append(signingConfigurations, signingConfiguration)
 	}
-	backend.createAndAddAccount(coin, code, name, signingConfigurations)
+
+	err := backend.persistAccount(config.Account{
+		CoinCode:                coin.Code(),
+		Name:                    name,
+		Code:                    code,
+		SupportsUnifiedAccounts: keystore.SupportsUnifiedAccounts(),
+		RootFingerprint:         nil, // TODO
+		Configurations:          signingConfigurations,
+	})
+
+	if errp.Cause(err) == ErrAccountAlreadyExists {
+		// This is adding initial default accounts. If this already happened, there is nothing else
+		// to do.
+	} else if err != nil {
+		log.WithError(err).Error("Error persisting default BTC account")
+	}
 }
 
-// The accountsLock must be held when calling this function.
-func (backend *Backend) createAndAddETHAccount(
+func (backend *Backend) persistETHAccount(
 	keystore keystore.Keystore,
 	coin coin.Coin,
 	code string,
@@ -476,6 +490,8 @@ func (backend *Backend) createAndAddETHAccount(
 ) {
 	name := coin.Name()
 	log := backend.log.WithField("code", code).WithField("name", name)
+	// This used to be a user-facing setting. Now we simply use it for migration to decide which
+	// coins to add by default.
 	if !backend.config.AppConfig().Backend.CoinActive(coin.Code()) {
 		log.Info("skipping inactive account")
 		return
@@ -486,7 +502,7 @@ func (backend *Backend) createAndAddETHAccount(
 		return
 	}
 
-	log.Info("init account")
+	log.Info("persist account")
 	absoluteKeypath, err := signing.NewAbsoluteKeypath(keypath)
 	if err != nil {
 		panic(err)
@@ -504,7 +520,35 @@ func (backend *Backend) createAndAddETHAccount(
 			extendedPublicKey,
 		),
 	}
-	backend.createAndAddAccount(coin, code, name, signingConfigurations)
+
+	// In the past, ERC20 tokens were configured to be active or inactive globally, now they are
+	// active/inactive per ETH account. We use the previous global settings to decide the default
+	// set of active tokens, for a smoother migration for the user.
+	var activeTokens []string
+	if coin.Code() == coinpkg.CodeETH {
+		for _, tokenCode := range backend.config.AppConfig().Backend.ETH.ActiveERC20Tokens {
+			prefix := "eth-erc20-"
+			// Old config entries did not contain this prefix, but the token codes in the new config
+			// do, to match the codes listed in erc20.go
+			activeTokens = append(activeTokens, prefix+tokenCode)
+		}
+	}
+
+	err = backend.persistAccount(config.Account{
+		CoinCode:                coin.Code(),
+		Name:                    name,
+		Code:                    code,
+		SupportsUnifiedAccounts: keystore.SupportsUnifiedAccounts(),
+		RootFingerprint:         nil, // TODO
+		Configurations:          signingConfigurations,
+		ActiveTokens:            activeTokens,
+	})
+	if errp.Cause(err) == ErrAccountAlreadyExists {
+		// This is adding initial default accounts. If this already happened, there is nothing else
+		// to do.
+	} else if err != nil {
+		log.WithError(err).Error("Error persisting default ETH account")
+	}
 }
 
 // Config returns the app config.
@@ -697,24 +741,15 @@ func (backend *Backend) initPersistedAccounts() {
 	}
 }
 
-// initDefaultAccounts creates a bunch of default accounts for a set of keystores (not manually
-// user-added). Currently the first bip44 account for all supported and active account types.
-//
-// The accountsLock must be held when calling this function.
-func (backend *Backend) initDefaultAccounts() {
-	if backend.keystores.Count() == 0 {
-		return
-	}
-	if backend.keystores.Count() > 1 {
-		// If needed, insert multisig account initialization here based on multiple connected
-		// keystores.
-		return
-	}
-	keystore := backend.keystores.Keystores()[0]
+// persistDefaultAccounts persists a bunch of default accounts for the connected keystore (not
+// manually user-added). Currently the first bip44 account of BTC/LTC/ETH. ERC20 tokens are added if
+// they were configured to be active by the user in the past, when they could still configure them
+// globally in the settings.
+func (backend *Backend) persistDefaultAccounts(keystore keystore.Keystore) {
 	if backend.arguments.Testing() {
 		if backend.arguments.Regtest() {
 			RBTC, _ := backend.Coin(coinpkg.CodeRBTC)
-			backend.createAndAddBTCAccount(keystore, RBTC,
+			backend.persistBTCAccount(keystore, RBTC,
 				"rbtc",
 				[]scriptTypeWithKeypath{
 					newScriptTypeWithKeypath(signing.ScriptTypeP2WPKHP2SH, "m/49'/1'/0'"),
@@ -723,7 +758,7 @@ func (backend *Backend) initDefaultAccounts() {
 			)
 		} else {
 			TBTC, _ := backend.Coin(coinpkg.CodeTBTC)
-			backend.createAndAddBTCAccount(keystore, TBTC,
+			backend.persistBTCAccount(keystore, TBTC,
 				"tbtc",
 				[]scriptTypeWithKeypath{
 					newScriptTypeWithKeypath(signing.ScriptTypeP2WPKH, "m/84'/1'/0'"),
@@ -733,7 +768,7 @@ func (backend *Backend) initDefaultAccounts() {
 			)
 
 			TLTC, _ := backend.Coin(coinpkg.CodeTLTC)
-			backend.createAndAddBTCAccount(keystore, TLTC,
+			backend.persistBTCAccount(keystore, TLTC,
 				"tltc",
 				[]scriptTypeWithKeypath{
 					newScriptTypeWithKeypath(signing.ScriptTypeP2WPKH, "m/84'/1'/0'"),
@@ -741,15 +776,15 @@ func (backend *Backend) initDefaultAccounts() {
 				},
 			)
 			TETH, _ := backend.Coin(coinpkg.CodeTETH)
-			backend.createAndAddETHAccount(keystore, TETH, "teth", "m/44'/1'/0'/0")
+			backend.persistETHAccount(keystore, TETH, "teth", "m/44'/1'/0'/0")
 			RETH, _ := backend.Coin(coinpkg.CodeRETH)
-			backend.createAndAddETHAccount(keystore, RETH, "reth", "m/44'/1'/0'/0")
+			backend.persistETHAccount(keystore, RETH, "reth", "m/44'/1'/0'/0")
 			erc20TEST, _ := backend.Coin(coinpkg.CodeERC20TEST)
-			backend.createAndAddETHAccount(keystore, erc20TEST, "erc20Test", "m/44'/1'/0'/0")
+			backend.persistETHAccount(keystore, erc20TEST, "erc20Test", "m/44'/1'/0'/0")
 		}
 	} else {
 		BTC, _ := backend.Coin(coinpkg.CodeBTC)
-		backend.createAndAddBTCAccount(keystore, BTC,
+		backend.persistBTCAccount(keystore, BTC,
 			"btc",
 			[]scriptTypeWithKeypath{
 				newScriptTypeWithKeypath(signing.ScriptTypeP2WPKH, "m/84'/0'/0'"),
@@ -759,7 +794,7 @@ func (backend *Backend) initDefaultAccounts() {
 		)
 
 		LTC, _ := backend.Coin(coinpkg.CodeLTC)
-		backend.createAndAddBTCAccount(keystore, LTC,
+		backend.persistBTCAccount(keystore, LTC,
 			"ltc",
 			[]scriptTypeWithKeypath{
 				newScriptTypeWithKeypath(signing.ScriptTypeP2WPKH, "m/84'/2'/0'"),
@@ -768,14 +803,7 @@ func (backend *Backend) initDefaultAccounts() {
 		)
 
 		ETH, _ := backend.Coin(coinpkg.CodeETH)
-		backend.createAndAddETHAccount(keystore, ETH, "eth", "m/44'/60'/0'/0")
-
-		if backend.config.AppConfig().Backend.CoinActive(coinpkg.CodeETH) {
-			for _, erc20Token := range erc20Tokens {
-				token, _ := backend.Coin(erc20Token.code)
-				backend.createAndAddETHAccount(keystore, token, string(erc20Token.code), "m/44'/60'/0'/0")
-			}
-		}
+		backend.persistETHAccount(keystore, ETH, "eth", "m/44'/60'/0'/0")
 	}
 }
 
@@ -784,7 +812,6 @@ func (backend *Backend) initAccounts() {
 	// Since initAccounts replaces all previous accounts, we need to properly close them first.
 	backend.uninitAccounts()
 
-	backend.initDefaultAccounts()
 	backend.initPersistedAccounts()
 
 	backend.emitAccountsStatusChanged()
@@ -980,6 +1007,8 @@ func (backend *Backend) registerKeystore(keystore keystore.Keystore) {
 	if backend.arguments.Multisig() && backend.keystores.Count() != 2 {
 		return
 	}
+
+	backend.persistDefaultAccounts(keystore)
 
 	defer backend.accountsLock.Lock()()
 	backend.initAccounts()
