@@ -1042,7 +1042,7 @@
   "manageAccounts": {
     "addAccount": "Add account",
     "choose-name": {
-      "nextButton": "Next",
+      "nextButton": "Add account",
       "step": "Name account",
       "title": "Name your account"
     },
