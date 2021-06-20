@@ -1,3 +1,4 @@
+#include <singleapplication.h>
 #include <QApplication>
 #include <QWebEngineView>
 #include <QWebEngineProfile>
@@ -32,10 +33,14 @@ static WebClass* webClass;
 static QMutex webClassMutex;
 static QSystemTrayIcon* trayIcon;
 
-class BitBoxApp : public QApplication
+class BitBoxApp : public SingleApplication
 {
 public:
-    BitBoxApp(int &argc, char **argv): QApplication(argc, argv)
+    BitBoxApp(int &argc, char **argv): SingleApplication(
+        argc,
+        argv,
+        true, // allow 2nd instance to launch so we can send a message to the primary instance
+        Mode::User | Mode::SecondaryNotification)
     {
     }
 
@@ -164,9 +169,37 @@ int main(int argc, char *argv[])
     a.setOrganizationDomain("shiftcrypto.ch");
     a.setOrganizationName("Shift Crypto");
     a.setWindowIcon(QIcon(QCoreApplication::applicationDirPath() + "/bitbox.png"));
+
+    if(a.isSecondary()) {
+        // The application is already running. We send the arguments to the primary instance to
+        // handle.
+
+        // TODO: check if there is one positional arg which is a URI and only forward that one. No
+        // need to handle all types of args here.
+        a.sendMessage(a.arguments().join(' ').toUtf8());
+        qDebug() << "App already running.";
+        return 0;
+    }
+    // Receive and handle an URI sent by a secondary instance (see above).
+    QObject::connect(
+        &a,
+        &SingleApplication::receivedMessage,
+        [&](int instanceId, QByteArray message) {
+            QString args = QString::fromUtf8(message);
+            qDebug() << "Received args from secondary instance:" << args;
+        });
+
     view = new WebEngineView();
     view->setGeometry(0, 0, a.devicePixelRatio() * view->width(), a.devicePixelRatio() * view->height());
     view->setMinimumSize(650, 375);
+
+    // Bring the primary instance to the foreground.
+    // TODO: test on Windows and potentially apply https://github.com/itay-grudev/SingleApplication/issues/107
+    QObject::connect(
+        &a, &SingleApplication::instanceStarted,
+        [&]() {
+            view->raise();
+        });
 
     QSettings settings;
     if (settings.contains("mainWindowGeometry")) {
