@@ -1,0 +1,3 @@
+[submodule "frontends/qt/external/SingleApplication"]
+	path = frontends/qt/external/SingleApplication
+	url = https://github.com/itay-grudev/SingleApplication.git
