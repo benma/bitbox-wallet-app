@@ -16,6 +16,7 @@
 #include <QMenu>
 #include <QSystemTrayIcon>
 #include <QMessageBox>
+#include <QtPlatformHeaders/QWindowsWindowFunctions>
 #include <iostream>
 #include <set>
 #include <string>
@@ -194,11 +195,11 @@ int main(int argc, char *argv[])
     view->setMinimumSize(650, 375);
 
     // Bring the primary instance to the foreground.
-    // TODO: test on Windows and potentially apply https://github.com/itay-grudev/SingleApplication/issues/107
     QObject::connect(
         &a, &SingleApplication::instanceStarted,
         [&]() {
-            view->raise();
+            view->activateWindow(); // works on Windows
+            view->raise(); // works on Linux
         });
 
     QSettings settings;
@@ -305,6 +306,12 @@ int main(int argc, char *argv[])
             workerThread.quit();
             workerThread.wait();
         });
+
+    // Allow existing app to be brought to the foreground. See `view->activateWindow()` above.
+    // Without this, on Windows, only the taskbar entry would light up. On Linux, this is not
+    // currently needed, but we don't do a Windows guard so that it continues to work on all
+    // platforms.
+    QWindowsWindowFunctions::setWindowActivationBehavior(QWindowsWindowFunctions::AlwaysActivateWindow);
 
     return a.exec();
 }
