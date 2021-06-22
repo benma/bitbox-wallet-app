@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { CoinCode } from './account';
+import { AccountCode, CoinCode } from './account';
 import { apiGet, apiPost } from '../utils/request';
 
 export interface ICoin {
@@ -48,4 +48,27 @@ export const renameAccount = (accountCode: string, name: string): Promise<ISucce
 
 export const reinitializeAccounts = (): Promise<null> => {
     return apiPost('accounts/reinitialize');
+};
+
+export interface AoppAccount {
+    name: string;
+    code: AccountCode;
+}
+
+export interface Aopp {
+    // See backend/aopp.go fo ra description of the states.x
+    state: '' | 'error' | 'awaiting-keystore' | 'choosing-account' | 'syncing' | 'signing' | 'success';
+    accounts: AoppAccount[];
+    // See backend/errors.go for a description of the errors.
+    errorCode: '' | 'aoppUnsupportedAsset' | 'aoppVersion' | 'aoppInvalidRequest' | 'aoppNoAccounts' | 'aoppCannotSign' | 'aoppUnknown' | 'aoppSigningAborted' | 'aoppCallback';
+    address: string;
+    callbackHost: string;
+}
+
+export const aoppCancel = (): Promise<null> => {
+    return apiPost('aopp/cancel');
+};
+
+export const aoppChooseAccount = (accountCode: string): Promise<null> => {
+    return apiPost('aopp/choose-account', { accountCode });
 };

@@ -18,6 +18,10 @@ package action
 type Action string
 
 const (
+	// Notify pushes information to the listener. The listener handles the notification depending on
+	// the subject.
+	Notify Action = "notify"
+
 	// Replace replaces the current value of the subject with the object.
 	Replace Action = "replace"
 

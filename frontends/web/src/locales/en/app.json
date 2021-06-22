@@ -415,7 +415,15 @@
   },
   "error": {
     "accountAlreadyExists": "The account already exists.",
-    "accountLimitReached": "Cannot add account. The maximum number of accounts for this coin has been reached."
+      "accountLimitReached": "Cannot add account. The maximum number of accounts for this coin has been reached.",
+      "aoppUnsupportedAsset": "The asset is not supported.",
+      "aoppVersion": "Unknown version.",
+      "aoppNoAccounts": "There are no available accounts.",
+      "aoppCannotSign": "The connected device cannot sign messages for this asset.",
+      "aoppUnknown": "An unknown error occurred.",
+      "aoppSigningAborted": "Address ownership request cancelled.",
+      "aoppInvalidRequest": "Invalid request.",
+      "aoppCallback": "There was an error delivering the address to {{host}}."
   },
   "exchanges": {
     "method": "Select your payment method",
@@ -1276,5 +1284,9 @@
     "insertBitBox02": "For the BitBox02, please tap the device to continue.",
     "insertDevice": "Please connect your device to get started",
     "title": "Welcome"
-  }
+  },
+    "aopp":{
+        "addressRequested": "A receive address was requested by {{host}}.",
+        "awaitingKeystore": "Please insert and unlock your BitBox."
+    }
 }
