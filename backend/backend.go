@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/digitalbitbox/bitbox-wallet-app/backend/accounts"
@@ -454,6 +455,10 @@ func (backend *Backend) Start() <-chan interface{} {
 
 	backend.ratesUpdater.StartCurrentRates()
 	backend.configureHistoryExchangeRates()
+	go func() {
+		time.Sleep(5 * time.Second)
+		backend.HandleURI("aopp:?v=0&msg=I+confirm+that+this+Bitcoin+%28BTC%29+address+is+controlled+by+David+Lopez%2C+Poststrasse+22%2C+Zug%2C+Switzerland.+Unique+Identifier%3A+b83762dfbd8696a&asset=btc&format=any&callback=https%3A%2F%2Ftesting.21analytics.ch%2Fproofs%2F3730c437-4c4a-4364-8e7c-1b5a84b039f2")
+	}()
 	return backend.events
 }
 
