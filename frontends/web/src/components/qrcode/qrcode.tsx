@@ -29,7 +29,7 @@ export const QRCode: FunctionComponent<Props> = ({
     data,
     size = 256,
 }) => {
-    const src = useLoad(getQRCode(data));
+    const src = useLoad(data !== undefined ? getQRCode(data) : null);
     if (!src) {
         if (data !== undefined) {
             return <div className={style.empty}></div>;

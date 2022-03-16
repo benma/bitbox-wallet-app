@@ -45,19 +45,22 @@ export const useSubscribe = <T>(
 /**
  * useLoad is a hook to load a promise.
  * gets fired on first render, and returns undefined while loading.
+ * if 'apiCall` is `null`, the default state is returned.
  */
 export const useLoad = <T>(
-    apiCall: () => Promise<T>
+    apiCall: (() => Promise<T>) | null
 ): (T | undefined) => {
     const [respose, setResponse] = useState<T>();
     const mounted = useMountedRef();
     useEffect(
         () => {
-            apiCall().then((data) => {
-                if (mounted.current) {
-                    setResponse(data);
-                }
-            });
+            if (apiCall !== null) {
+                apiCall().then((data) => {
+                    if (mounted.current) {
+                        setResponse(data);
+                    }
+                });
+            }
         }, // we pass no dependencies because it's only queried once
         [] // eslint-disable-line react-hooks/exhaustive-deps
     );
