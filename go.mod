@@ -18,11 +18,10 @@ require (
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/sirupsen/logrus v1.2.0
 	github.com/skip2/go-qrcode v0.0.0-20170812161211-695fc75a0973
-	github.com/status-im/keycard-go v0.0.0-20190424133014-d95853db0f48 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/tyler-smith/go-bip39 v1.0.2 // indirect
 	go.etcd.io/bbolt v1.3.6
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
+	nhooyr.io/websocket v1.8.7
 )

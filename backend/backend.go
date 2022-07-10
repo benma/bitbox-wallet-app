@@ -30,6 +30,7 @@ import (
 	"github.com/digitalbitbox/bitbox-wallet-app/backend/coins/btc/electrum"
 	coinpkg "github.com/digitalbitbox/bitbox-wallet-app/backend/coins/coin"
 	"github.com/digitalbitbox/bitbox-wallet-app/backend/coins/eth"
+	"github.com/digitalbitbox/bitbox-wallet-app/backend/coins/eth/blockbook"
 	"github.com/digitalbitbox/bitbox-wallet-app/backend/coins/eth/erc20"
 	"github.com/digitalbitbox/bitbox-wallet-app/backend/coins/eth/etherscan"
 	"github.com/digitalbitbox/bitbox-wallet-app/backend/coins/ltc"
@@ -363,10 +364,11 @@ func (backend *Backend) Coin(code coinpkg.Code) (coinpkg.Coin, error) {
 		coin = btc.NewCoin(coinpkg.CodeLTC, "Litecoin", "LTC", &ltc.MainNetParams, dbFolder, servers,
 			"https://insight.litecore.io/tx/", backend.socksProxy)
 	case code == coinpkg.CodeETH:
-		etherScan := etherscan.NewEtherScan("https://api.etherscan.io/api", backend.etherScanHTTPClient)
-		coin = eth.NewCoin(etherScan, code, "Ethereum", "ETH", "ETH", params.MainnetChainConfig,
+		//etherScan := etherscan.NewEtherScan("https://api.etherscan.io/api", backend.etherScanHTTPClient)
+		blockbook := blockbook.New("https://ethdev.shiftcrypto.io", "wss://ethdev.shiftcrypto.io/websocket", backend.httpClient)
+		coin = eth.NewCoin(blockbook, code, "Ethereum", "ETH", "ETH", params.MainnetChainConfig,
 			"https://etherscan.io/tx/",
-			etherScan,
+			blockbook,
 			nil)
 	case code == coinpkg.CodeRETH:
 		etherScan := etherscan.NewEtherScan("https://api-rinkeby.etherscan.io/api", backend.etherScanHTTPClient)
@@ -388,10 +390,11 @@ func (backend *Backend) Coin(code coinpkg.Code) (coinpkg.Coin, error) {
 			erc20.NewToken("0x2f45b6fb2f28a73f110400386da31044b2e953d4", 18),
 		)
 	case erc20Token != nil:
-		etherScan := etherscan.NewEtherScan("https://api.etherscan.io/api", backend.etherScanHTTPClient)
-		coin = eth.NewCoin(etherScan, erc20Token.code, erc20Token.name, erc20Token.unit, "ETH", params.MainnetChainConfig,
+		//etherScan := etherscan.NewEtherScan("https://api.etherscan.io/api", backend.etherScanHTTPClient)
+		blockbook := blockbook.New("https://ethdev.shiftcrypto.io", "wss://ethdev.shiftcrypto.io/websocket", backend.httpClient)
+		coin = eth.NewCoin(blockbook, erc20Token.code, erc20Token.name, erc20Token.unit, "ETH", params.MainnetChainConfig,
 			"https://etherscan.io/tx/",
-			etherScan,
+			blockbook,
 			erc20Token.token,
 		)
 	default:
