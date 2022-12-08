@@ -21,6 +21,7 @@ import (
 	chainhash "github.com/btcsuite/btcd/chaincfg/chainhash"
 	wire "github.com/btcsuite/btcd/wire"
 	blockchain "github.com/digitalbitbox/bitbox-wallet-app/backend/coins/btc/blockchain"
+	"github.com/digitalbitbox/block-client-go/electrum/types"
 )
 
 // BlockchainMock implements blockchain.Interface for use in tests.
@@ -28,7 +29,7 @@ type BlockchainMock struct {
 	MockScriptHashGetHistory func(blockchain.ScriptHashHex) (blockchain.TxHistory, error)
 	MockTransactionGet       func(chainhash.Hash) (*wire.MsgTx, error)
 	MockScriptHashSubscribe  func(func() func(error), blockchain.ScriptHashHex, func(string))
-	MockHeadersSubscribe     func(func() func(error), func(*blockchain.Header))
+	MockHeadersSubscribe     func(func() func(error), func(*types.Header))
 	MockTransactionBroadcast func(*wire.MsgTx) error
 	MockRelayFee             func() (btcutil.Amount, error)
 	MockEstimateFee          func(int) (btcutil.Amount, error)
@@ -64,7 +65,7 @@ func (b *BlockchainMock) ScriptHashSubscribe(setupAndTeardown func() func(error)
 }
 
 // HeadersSubscribe implements Interface.
-func (b *BlockchainMock) HeadersSubscribe(setupAndTeardown func() func(error), success func(*blockchain.Header)) {
+func (b *BlockchainMock) HeadersSubscribe(setupAndTeardown func() func(error), success func(*types.Header)) {
 	if b.MockHeadersSubscribe != nil {
 		b.MockHeadersSubscribe(setupAndTeardown, success)
 	}

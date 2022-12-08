@@ -42,6 +42,7 @@ import (
 	"github.com/digitalbitbox/bitbox-wallet-app/util/locker"
 	"github.com/digitalbitbox/bitbox-wallet-app/util/observable"
 	"github.com/digitalbitbox/bitbox-wallet-app/util/observable/action"
+	electrumTypes "github.com/digitalbitbox/block-client-go/electrum/types"
 	"github.com/sirupsen/logrus"
 )
 
@@ -414,12 +415,12 @@ func (account *Account) Info() *accounts.Info {
 	}
 }
 
-func (account *Account) onNewHeader(header *blockchain.Header) {
+func (account *Account) onNewHeader(header *electrumTypes.Header) {
 	if account.isClosed() {
 		account.log.Debug("Ignoring new header after the account was closed")
 		return
 	}
-	account.log.WithField("block-height", header.BlockHeight).Debug("Received new header")
+	account.log.WithField("block-height", header.Height).Debug("Received new header")
 	// Fee estimates change with each block.
 	account.updateFeeTargets()
 }
