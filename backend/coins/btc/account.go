@@ -527,6 +527,11 @@ func (account *Account) Balance() (*accounts.Balance, error) {
 	if account.fatalError.Load() {
 		return nil, errp.New("can't call Balance() after a fatal error")
 	}
+
+	if !account.Synced() {
+		return nil, nil
+	}
+
 	balance, err := account.transactions.Balance()
 	if err != nil {
 		// TODO
@@ -668,6 +673,9 @@ func (account *Account) Transactions() (accounts.OrderedTransactions, error) {
 	}
 	if account.fatalError.Load() {
 		return nil, errp.New("can't call Transactions() after a fatal error")
+	}
+	if !account.Synced() {
+		return nil, nil
 	}
 	txs, err := account.transactions.Transactions(
 		func(scriptHashHex blockchain.ScriptHashHex) bool {

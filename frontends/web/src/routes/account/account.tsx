@@ -54,7 +54,7 @@ export function Account({
 }: Props) {
   const { t } = useTranslation();
 
-  const [balance, setBalance] = useState<accountApi.IBalance>();
+  const [balance, setBalance] = useState<accountApi.IBalance>(null);
   const [status, setStatus] = useState<accountApi.IStatus>();
   const [syncedAddressesCount, setSyncedAddressesCount] = useState<number>();
   const [transactions, setTransactions] = useState<accountApi.ITransaction[]>();
@@ -91,7 +91,7 @@ export function Account({
       ])
         .catch(console.error);
     } else {
-      setBalance(undefined);
+      setBalance(null);
       setTransactions(undefined);
     }
   }, []);
@@ -148,14 +148,14 @@ export function Account({
 
   useEffect(() => {
     setStateCode(code);
-    setBalance(undefined);
+    setBalance(null);
     setStatus(undefined);
     setSyncedAddressesCount(0);
     setTransactions(undefined);
     onStatusChanged();
   }, [code, onStatusChanged]);
 
-  const hasDataLoaded = balance !== undefined && transactions !== undefined;
+  const hasDataLoaded = balance !== null && transactions !== undefined;
 
   const account = accounts && accounts.find(acct => acct.code === code);
   if (stateCode !== code) {
@@ -167,7 +167,7 @@ export function Account({
     return null;
   }
 
-  const canSend = balance && balance.hasAvailable;
+  const canSend = balance !== null && balance.hasAvailable;
 
   const initializingSpinnerText =
     (syncedAddressesCount !== undefined && syncedAddressesCount > 1) ? (
@@ -187,7 +187,7 @@ export function Account({
   }
 
   const showBuyButton = moonpayBuySupported
-    && balance
+    && balance !== null
     && !balance.hasAvailable
     && !balance.hasIncoming
     && transactions && transactions.length === 0;
@@ -259,9 +259,9 @@ export function Account({
       <AccountGuide
         account={account}
         unit={balance?.available.unit}
-        hasIncomingBalance={balance && balance.hasIncoming}
+        hasIncomingBalance={balance !== null && balance.hasIncoming}
         hasTransactions={transactions !== undefined && transactions.length > 0}
-        hasNoBalance={balance && balance.available.amount === '0'} />
+        hasNoBalance={balance !== null && balance.available.amount === '0'} />
     </div>
   );
 }

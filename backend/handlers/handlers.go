@@ -531,9 +531,7 @@ func (handlers *Handlers) postBtcFormatUnit(r *http.Request) (interface{}, error
 
 func (handlers *Handlers) getAccountsTotalBalanceHandler(_ *http.Request) (interface{}, error) {
 	totalPerCoin := make(map[coin.Code]*big.Int)
-	conversionsPerCoin := make(map[coin.Code]map[string]string)
-
-	totalAmount := make(map[coin.Code]accountHandlers.FormattedAmount)
+	totalAmount := make(map[coin.Code]*accountHandlers.FormattedAmount)
 
 	for _, account := range handlers.backend.Accounts() {
 		if !account.Config().Active {
@@ -551,31 +549,37 @@ func (handlers *Handlers) getAccountsTotalBalanceHandler(_ *http.Request) (inter
 		if err != nil {
 			return nil, err
 		}
+		if b == nil {
+			totalPerCoin[coinCode] = nil
+			continue
+		}
 		amount := b.Available()
 		if _, ok := totalPerCoin[coinCode]; !ok {
 			totalPerCoin[coinCode] = amount.BigInt()
-
-		} else {
+		} else if totalPerCoin[coinCode] != nil {
 			totalPerCoin[coinCode] = new(big.Int).Add(totalPerCoin[coinCode], amount.BigInt())
 		}
 
-		conversionsPerCoin[coinCode] = coin.Conversions(
-			coin.NewAmount(totalPerCoin[coinCode]),
-			account.Coin(),
-			false,
-			account.Config().RateUpdater,
-			util.FormatBtcAsSat(handlers.backend.Config().AppConfig().Backend.BtcUnit))
 	}
 
-	for k, v := range totalPerCoin {
-		currentCoin, err := handlers.backend.Coin(k)
+	for coinCode, v := range totalPerCoin {
+		if totalPerCoin[coinCode] == nil {
+			totalAmount[coinCode] = nil
+			continue
+		}
+		currentCoin, err := handlers.backend.Coin(coinCode)
 		if err != nil {
 			return nil, err
 		}
-		totalAmount[k] = accountHandlers.FormattedAmount{
-			Amount:      currentCoin.FormatAmount(coin.NewAmount(v), false),
-			Unit:        currentCoin.GetFormatUnit(false),
-			Conversions: conversionsPerCoin[k],
+		totalAmount[coinCode] = &accountHandlers.FormattedAmount{
+			Amount: currentCoin.FormatAmount(coin.NewAmount(v), false),
+			Unit:   currentCoin.GetFormatUnit(false),
+			Conversions: coin.Conversions(
+				coin.NewAmount(totalPerCoin[coinCode]),
+				currentCoin,
+				false,
+				handlers.backend.RatesUpdater(),
+				util.FormatBtcAsSat(handlers.backend.Config().AppConfig().Backend.BtcUnit)),
 		}
 	}
 	return totalAmount, nil
@@ -1007,6 +1011,9 @@ func (handlers *Handlers) postExportAccountSummary(_ *http.Request) (interface{}
 		balance, err := account.Balance()
 		if err != nil {
 			return nil, err
+		}
+		if balance == nil {
+			continue
 		}
 		unit := account.Coin().SmallestUnit()
 		var accountType string

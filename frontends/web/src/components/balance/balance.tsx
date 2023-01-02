@@ -22,7 +22,7 @@ import { bitcoinRemoveTrailingZeroes } from '../../utils/trailing-zeroes';
 import style from './balance.module.css';
 
 type TProps = {
-    balance?: IBalance;
+    balance: IBalance;
     noRotateFiat?: boolean;
 }
 
@@ -33,7 +33,7 @@ export const Balance = ({
   const { t } = useTranslation();
   if (!balance) {
     return (
-      <header className={style.balance}></header>
+      <header className={style.balance}>TODO LOADING</header>
     );
   }
 

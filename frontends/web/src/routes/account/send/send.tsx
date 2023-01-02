@@ -61,7 +61,7 @@ type Props = SendProps & TranslateProps;
 
 interface State {
     account?: accountApi.IAccount;
-    balance?: accountApi.IBalance;
+    balance: accountApi.IBalance;
     proposedFee?: accountApi.IAmount;
     proposedTotal?: accountApi.IAmount;
     recipientAddress: string;
@@ -107,6 +107,7 @@ class Send extends Component<Props, State> {
   private proposeTimeout: any = null;
 
   public readonly state: State = {
+    balance: null,
     recipientAddress: '',
     amount: '',
     fiatAmount: '',

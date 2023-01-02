@@ -33,10 +33,10 @@ export const AddBuyOnEmptyBalances = ({ balances }: {balances?: Balances}) => {
     return null;
   }
   const balanceList = Object.entries(balances);
-  if (balanceList.some(entry => entry[1].hasAvailable)) {
+  if (balanceList.some(entry => entry[1] === null || entry[1].hasAvailable)) {
     return null;
   }
-  if (balanceList.map(entry => entry[1].available.unit).every(isBitcoinCoin)) {
+  if (balanceList.map(entry => entry[1]!.available.unit).every(isBitcoinCoin)) {
     return <BuyCTA code={balanceList[0][0]} unit={'BTC'} />;
   }
   return <BuyCTA />;

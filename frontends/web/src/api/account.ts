@@ -141,12 +141,12 @@ export interface IAmount {
     unit: Coin;
 }
 
-export interface IBalance {
+export type IBalance = {
     hasAvailable: boolean;
     available: IAmount;
     hasIncoming: boolean;
     incoming: IAmount;
-}
+} | null;
 
 export const getBalance = (code: AccountCode): Promise<IBalance> => {
   return apiGet(`account/${code}/balance`);

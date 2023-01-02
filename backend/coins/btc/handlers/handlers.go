@@ -325,6 +325,9 @@ func (handlers *Handlers) getAccountBalance(_ *http.Request) (interface{}, error
 	if err != nil {
 		return nil, err
 	}
+	if balance == nil {
+		return nil, nil
+	}
 	return map[string]interface{}{
 		"hasAvailable": balance.Available().BigInt().Sign() > 0,
 		"available":    handlers.formatAmountAsJSON(balance.Available(), false),

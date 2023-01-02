@@ -143,9 +143,17 @@ func (backend *Backend) ChartData() (*Chart, error) {
 		if err != nil {
 			return nil, err
 		}
+		if !account.Synced() {
+			chartDataMissing = true
+			continue
+		}
 		balance, err := account.Balance()
 		if err != nil {
 			return nil, err
+		}
+		if balance == nil {
+			chartDataMissing = true
+			continue
 		}
 		txs, err := account.Transactions()
 		if err != nil {

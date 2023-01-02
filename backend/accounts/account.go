@@ -66,9 +66,9 @@ type Interface interface {
 	FatalError() bool
 	Close()
 	Notifier() Notifier
-	// Must enforce that initial sync is done before returning.
+	// Returns `nil, nil` if the initial sync is not done yet and the balance is not available yet.
 	Transactions() (OrderedTransactions, error)
-	// Must enforce that initial sync is done before returning.
+	// Returns `nil, nil` if the initial sync is not done yet and the balance is not available yet.
 	Balance() (*Balance, error)
 	// SendTx signs and sends the active tx proposal, set by TxProposal. Errors if none
 	// available. The note, if set by ProposeTxNote(), is persisted for the transaction.
