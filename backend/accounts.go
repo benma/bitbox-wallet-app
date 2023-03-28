@@ -305,7 +305,6 @@ func nextAccountNumber(coinCode coinpkg.Code, keystore keystore.Keystore, accoun
 	if !keystore.SupportsMultipleAccounts() && nextAccountNumber >= 1 {
 		return 0, errp.WithStack(ErrAccountLimitReached)
 	}
-
 	if nextAccountNumber >= accountsHardLimit {
 		return 0, errp.WithStack(ErrAccountLimitReached)
 	}
@@ -683,8 +682,6 @@ func (backend *Backend) initPersistedAccounts(alreadyLoadedAccounts []accounts.I
 		return
 	}
 
-	backend.maybeAddHiddenUnusedAccounts()
-
 	lookup := func(accounts []accounts.Interface, code accountsTypes.Code) accounts.Interface {
 		for _, acct := range accounts {
 			if acct.Config().Config.Code == code {
@@ -907,7 +904,10 @@ func (backend *Backend) maybeAddHiddenUnusedAccounts() {
 		return
 	}
 
-	do := func(cfg *config.AccountsConfig, coinCode coinpkg.Code) error {
+	// Track whether a a new account was added.
+	added := false
+
+	do := func(cfg *config.AccountsConfig, coinCode coinpkg.Code) {
 		log := backend.log.
 			WithField("rootFingerprint", hex.EncodeToString(rootFingerprint)).
 			WithField("coinCode", coinCode)
@@ -932,9 +932,13 @@ func (backend *Backend) maybeAddHiddenUnusedAccounts() {
 			}
 		}
 		if maxAccount == nil {
-			return nil
+			return
 		}
-		if !maxAccount.HiddenBecauseUnused {
+		// Account scan gap limit:
+		// - Previous account must be used for the next one to be scanned, but:
+		// - The first 5 accounts are always scanned as before we had accounts discovery, the
+		//   BitBoxApp allowed manual creation of 5 accounts, so we need to always scan these.
+		if maxAccount.Used || maxAccountNumber < accountsHardLimit {
 			accountCode, err := backend.createAndPersistAccountConfig(
 				coinCode,
 				maxAccountNumber+1,
@@ -946,14 +950,14 @@ func (backend *Backend) maybeAddHiddenUnusedAccounts() {
 			)
 			if err != nil {
 				log.WithError(err).Error("adding hidden account failed")
-				return nil
+				return
 			}
+			added = true
 			log.
 				WithField("accountCode", accountCode).
 				WithField("accountNumber", maxAccountNumber+1).
 				Info("automatically created hidden account")
 		}
-		return nil
 	}
 
 	err = backend.config.ModifyAccountsConfig(func(cfg *config.AccountsConfig) error {
@@ -965,36 +969,39 @@ func (backend *Backend) maybeAddHiddenUnusedAccounts() {
 	if err != nil {
 		backend.log.WithError(err).Error("maybeAddHiddenUnusedAccounts failed")
 	}
+	if added {
+		backend.ReinitializeAccounts()
+	}
 }
 
 func (backend *Backend) discoverAccount(account accounts.Interface) {
 	log := backend.log.WithField("accountCode", account.Config().Config.Code)
 
 	account.Initialize()
-	if account.Config().Config.HiddenBecauseUnused {
-		txs, err := account.Transactions()
+	txs, err := account.Transactions()
+	if err != nil {
+		log.WithError(err).Error("discoverAccount")
+		return
+	}
+	if len(txs) > 0 {
+		log.Info("discovered used account")
+		err := backend.config.ModifyAccountsConfig(func(accountsConfig *config.AccountsConfig) error {
+			acct := accountsConfig.Lookup(account.Config().Config.Code)
+			if acct == nil {
+				return errp.Newf("could not find account")
+			}
+			acct.HiddenBecauseUnused = false
+			acct.Used = true
+			return nil
+		})
 		if err != nil {
 			log.WithError(err).Error("discoverAccount")
 			return
 		}
-		if len(txs) > 0 {
-			log.Info("discovered used account")
+		if account.Config().Config.HiddenBecauseUnused {
 			account.Config().Config.HiddenBecauseUnused = false
 			backend.emitAccountsStatusChanged()
-			err := backend.config.ModifyAccountsConfig(func(accountsConfig *config.AccountsConfig) error {
-				acct := accountsConfig.Lookup(account.Config().Config.Code)
-				if acct == nil {
-					return errp.Newf("could not find account")
-				}
-				acct.HiddenBecauseUnused = false
-				return nil
-			})
-			if err != nil {
-				log.WithError(err).Error("discoverAccount")
-				return
-			}
-			backend.maybeAddHiddenUnusedAccounts()
-			backend.ReinitializeAccounts()
 		}
+		backend.maybeAddHiddenUnusedAccounts()
 	}
 }

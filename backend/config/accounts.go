@@ -30,11 +30,13 @@ type Account struct {
 	// HiddenBecauseUnused is true if the account should not loaded in the sidebar and portfolio,
 	// and not be shown in 'Manage accounts', because the account is unused (has no transaction
 	// history). This is used to facilitate automatic discovery of used accounts.
-	HiddenBecauseUnused bool                   `json:"hiddenBecauseUnused"`
-	CoinCode            coin.Code              `json:"coinCode"`
-	Name                string                 `json:"name"`
-	Code                accountsTypes.Code     `json:"code"`
-	Configurations      signing.Configurations `json:"configurations"`
+	HiddenBecauseUnused bool `json:"hiddenBecauseUnused"`
+	// Used is true if the account has a transaction history.
+	Used           bool                   `json:"used"`
+	CoinCode       coin.Code              `json:"coinCode"`
+	Name           string                 `json:"name"`
+	Code           accountsTypes.Code     `json:"code"`
+	Configurations signing.Configurations `json:"configurations"`
 	// ActiveTokens list the tokens that should be loaded along with the account.  Currently, this
 	// only applies to ETH, and the elements are ERC20 token codes (e.g. "eth-erc20-usdt",
 	// "eth-erc20-bat", etc).
