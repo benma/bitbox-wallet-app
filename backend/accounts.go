@@ -15,6 +15,7 @@
 package backend
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math"
 	"sort"
@@ -166,6 +167,7 @@ func defaultAccountName(coin coinpkg.Coin, accountNumber uint16) string {
 func (backend *Backend) createAndPersistAccountConfig(
 	coinCode coinpkg.Code,
 	accountNumber uint16,
+	hiddenBecauseUnused bool,
 	name string,
 	keystore keystore.Keystore,
 	activeTokens []string,
@@ -201,6 +203,7 @@ func (backend *Backend) createAndPersistAccountConfig(
 		}
 		return accountCode, backend.persistBTCAccountConfig(keystore, coin,
 			accountCode,
+			hiddenBecauseUnused,
 			name,
 			[]scriptTypeWithKeypath{
 				{signing.ScriptTypeP2WPKH, signing.NewAbsoluteKeypathFromUint32(84+hardenedKeystart, bip44Coin, accountNumberHardened)},
@@ -217,6 +220,7 @@ func (backend *Backend) createAndPersistAccountConfig(
 		}
 		return accountCode, backend.persistBTCAccountConfig(keystore, coin,
 			accountCode,
+			hiddenBecauseUnused,
 			name,
 			[]scriptTypeWithKeypath{
 				{signing.ScriptTypeP2WPKH, signing.NewAbsoluteKeypathFromUint32(84+hardenedKeystart, bip44Coin, accountNumberHardened)},
@@ -230,7 +234,7 @@ func (backend *Backend) createAndPersistAccountConfig(
 			bip44Coin = "60'"
 		}
 		return accountCode, backend.persistETHAccountConfig(
-			keystore, coin, accountCode,
+			keystore, coin, accountCode, hiddenBecauseUnused,
 			// TODO: Use []uint32 instead of a string keypath
 			fmt.Sprintf("m/44'/%s/0'/0/%d", bip44Coin, accountNumber),
 			name,
@@ -352,7 +356,7 @@ func (backend *Backend) CreateAndPersistAccountConfig(
 			return err
 		}
 		accountCode, err = backend.createAndPersistAccountConfig(
-			coinCode, nextAccountNumber, name, keystore, nil, accountsConfig)
+			coinCode, nextAccountNumber, false, name, keystore, nil, accountsConfig)
 		return err
 	})
 	if err != nil {
@@ -547,6 +551,7 @@ func (backend *Backend) persistBTCAccountConfig(
 	keystore keystore.Keystore,
 	coin coinpkg.Coin,
 	code accountsTypes.Code,
+	hiddenBecauseUnused bool,
 	name string,
 	configs []scriptTypeWithKeypath,
 	accountsConfig *config.AccountsConfig,
@@ -589,10 +594,11 @@ func (backend *Backend) persistBTCAccountConfig(
 
 	if keystore.SupportsUnifiedAccounts() {
 		return backend.persistAccount(config.Account{
-			CoinCode:       coin.Code(),
-			Name:           name,
-			Code:           code,
-			Configurations: signingConfigurations,
+			HiddenBecauseUnused: hiddenBecauseUnused,
+			CoinCode:            coin.Code(),
+			Name:                name,
+			Code:                code,
+			Configurations:      signingConfigurations,
 		}, accountsConfig)
 	}
 
@@ -623,6 +629,7 @@ func (backend *Backend) persistETHAccountConfig(
 	keystore keystore.Keystore,
 	coin coinpkg.Coin,
 	code accountsTypes.Code,
+	hiddenBecauseUnused bool,
 	keypath string,
 	name string,
 	activeTokens []string,
@@ -661,11 +668,12 @@ func (backend *Backend) persistETHAccountConfig(
 	}
 
 	return backend.persistAccount(config.Account{
-		CoinCode:       coin.Code(),
-		Name:           name,
-		Code:           code,
-		Configurations: signingConfigurations,
-		ActiveTokens:   activeTokens,
+		HiddenBecauseUnused: hiddenBecauseUnused,
+		CoinCode:            coin.Code(),
+		Name:                name,
+		Code:                code,
+		Configurations:      signingConfigurations,
+		ActiveTokens:        activeTokens,
 	}, accountsConfig)
 }
 
@@ -674,6 +682,9 @@ func (backend *Backend) initPersistedAccounts() {
 	if backend.keystore == nil {
 		return
 	}
+
+	backend.maybeAddHiddenUnusedAccounts()
+
 	// Only load accounts which belong to connected keystores.
 	rootFingerprint, err := backend.keystore.RootFingerprint()
 	if err != nil {
@@ -723,14 +734,14 @@ func (backend *Backend) persistDefaultAccountConfigs(keystore keystore.Keystore,
 	if backend.arguments.Testing() {
 		if backend.arguments.Regtest() {
 			if backend.config.AppConfig().Backend.DeprecatedCoinActive(coinpkg.CodeRBTC) {
-				if _, err := backend.createAndPersistAccountConfig(coinpkg.CodeRBTC, 0, "", keystore, nil, accountsConfig); err != nil {
+				if _, err := backend.createAndPersistAccountConfig(coinpkg.CodeRBTC, 0, false, "", keystore, nil, accountsConfig); err != nil {
 					return err
 				}
 			}
 		} else {
 			for _, coinCode := range []coinpkg.Code{coinpkg.CodeTBTC, coinpkg.CodeTLTC, coinpkg.CodeGOETH} {
 				if backend.config.AppConfig().Backend.DeprecatedCoinActive(coinCode) {
-					if _, err := backend.createAndPersistAccountConfig(coinCode, 0, "", keystore, nil, accountsConfig); err != nil {
+					if _, err := backend.createAndPersistAccountConfig(coinCode, 0, false, "", keystore, nil, accountsConfig); err != nil {
 						return err
 
 					}
@@ -753,7 +764,7 @@ func (backend *Backend) persistDefaultAccountConfigs(keystore keystore.Keystore,
 					}
 				}
 
-				if _, err := backend.createAndPersistAccountConfig(coinCode, 0, "", keystore, activeTokens, accountsConfig); err != nil {
+				if _, err := backend.createAndPersistAccountConfig(coinCode, 0, false, "", keystore, activeTokens, accountsConfig); err != nil {
 					return err
 				}
 			}
@@ -861,4 +872,75 @@ func (backend *Backend) uninitAccounts() {
 		account.Close()
 	}
 	backend.accounts = []accounts.Interface{}
+}
+
+func (backend *Backend) maybeAddHiddenUnusedAccounts() {
+	if backend.keystore == nil {
+		return
+	}
+	// Only load accounts which belong to connected keystores.
+	rootFingerprint, err := backend.keystore.RootFingerprint()
+	if err != nil {
+		backend.log.WithError(err).Error("Could not retrieve root fingerprint")
+		return
+	}
+
+	do := func(cfg *config.AccountsConfig, coinCode coinpkg.Code) error {
+		log := backend.log.
+			WithField("rootFingerprint", hex.EncodeToString(rootFingerprint)).
+			WithField("coinCode", coinCode)
+
+		maxAccountNumber := uint16(0)
+		var maxAccount *config.Account
+		for i := range cfg.Accounts {
+			accountConfig := &cfg.Accounts[i]
+			if coinCode != accountConfig.CoinCode {
+				continue
+			}
+			if !accountConfig.Configurations.ContainsRootFingerprint(rootFingerprint) {
+				continue
+			}
+			accountNumber, err := accountConfig.Configurations[0].AccountNumber()
+			if err != nil {
+				continue
+			}
+			if maxAccount == nil || accountNumber > maxAccountNumber {
+				maxAccountNumber = accountNumber
+				maxAccount = accountConfig
+			}
+		}
+		if maxAccount == nil {
+			return nil
+		}
+		if !maxAccount.HiddenBecauseUnused {
+			accountCode, err := backend.createAndPersistAccountConfig(
+				coinCode,
+				maxAccountNumber+1,
+				true,
+				"",
+				backend.keystore,
+				nil,
+				cfg,
+			)
+			if err != nil {
+				log.WithError(err).Error("adding hidden account failed")
+				return nil
+			}
+			log.
+				WithField("accountCode", accountCode).
+				WithField("accountNumber", maxAccountNumber+1).
+				Info("automatically created hidden account")
+		}
+		return nil
+	}
+
+	err = backend.config.ModifyAccountsConfig(func(cfg *config.AccountsConfig) error {
+		for _, coinCode := range []coinpkg.Code{coinpkg.CodeTBTC} {
+			do(cfg, coinCode)
+		}
+		return nil
+	})
+	if err != nil {
+		backend.log.WithError(err).Error("maybeAddHiddenUnusedAccounts failed")
+	}
 }
