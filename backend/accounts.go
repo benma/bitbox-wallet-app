@@ -16,6 +16,7 @@ package backend
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
@@ -240,6 +241,37 @@ func (backend *Backend) createAndPersistAccountConfig(
 	}
 }
 
+func useHiddenAccount(coinCode coinpkg.Code, keystore keystore.Keystore, accountsConfig *config.AccountsConfig) (*config.Account, error) {
+	rootFingerprint, err := keystore.RootFingerprint()
+	if err != nil {
+		return nil, err
+	}
+	smallestHiddenAccountNumber := uint16(math.MaxUint16)
+	var result *config.Account
+
+	for i := range accountsConfig.Accounts {
+		accountConfig := &accountsConfig.Accounts[i]
+		if coinCode != accountConfig.CoinCode {
+			continue
+		}
+		if !accountConfig.Configurations.ContainsRootFingerprint(rootFingerprint) {
+			continue
+		}
+		if len(accountConfig.Configurations) == 0 {
+			continue
+		}
+		accountNumber, err := accountConfig.Configurations[0].AccountNumber()
+		if err != nil {
+			continue
+		}
+		if accountConfig.HiddenBecauseUnused && accountNumber < smallestHiddenAccountNumber {
+			smallestHiddenAccountNumber = accountNumber
+			result = accountConfig
+		}
+	}
+	return result, nil
+}
+
 // nextAccountNumber checks if an account for the given coin can be added, and if so, returns the
 // account number of the new account.
 func nextAccountNumber(coinCode coinpkg.Code, keystore keystore.Keystore, accountsConfig *config.AccountsConfig) (uint16, error) {
@@ -248,17 +280,17 @@ func nextAccountNumber(coinCode coinpkg.Code, keystore keystore.Keystore, accoun
 		return 0, err
 	}
 	nextAccountNumber := uint16(0)
-	for _, account := range accountsConfig.Accounts {
-		if coinCode != account.CoinCode {
+	for _, accountConfig := range accountsConfig.Accounts {
+		if coinCode != accountConfig.CoinCode {
 			continue
 		}
-		if !account.Configurations.ContainsRootFingerprint(rootFingerprint) {
+		if !accountConfig.Configurations.ContainsRootFingerprint(rootFingerprint) {
 			continue
 		}
-		if len(account.Configurations) == 0 {
+		if len(accountConfig.Configurations) == 0 {
 			continue
 		}
-		accountNumber, err := account.Configurations[0].AccountNumber()
+		accountNumber, err := accountConfig.Configurations[0].AccountNumber()
 		if err != nil {
 			continue
 		}
@@ -280,6 +312,13 @@ func nextAccountNumber(coinCode coinpkg.Code, keystore keystore.Keystore, accoun
 // along with a suggested name for the account.
 func (backend *Backend) CanAddAccount(coinCode coinpkg.Code, keystore keystore.Keystore) (string, bool) {
 	conf := backend.config.AccountsConfig()
+	reuseAccount, err := useHiddenAccount(coinCode, keystore, &conf)
+	if err != nil {
+		return "", false
+	}
+	if reuseAccount != nil {
+		return reuseAccount.Name, true
+	}
 	accountNumber, err := nextAccountNumber(coinCode, keystore, &conf)
 	if err != nil {
 		return "", false
@@ -299,6 +338,15 @@ func (backend *Backend) CreateAndPersistAccountConfig(
 	coinCode coinpkg.Code, name string, keystore keystore.Keystore) (accountsTypes.Code, error) {
 	var accountCode accountsTypes.Code
 	err := backend.config.ModifyAccountsConfig(func(accountsConfig *config.AccountsConfig) error {
+		reuseAccount, err := useHiddenAccount(coinCode, keystore, accountsConfig)
+		if err != nil {
+			return err
+		}
+		if reuseAccount != nil {
+			reuseAccount.HiddenBecauseUnused = false
+			accountCode = reuseAccount.Code
+			return nil
+		}
 		nextAccountNumber, err := nextAccountNumber(coinCode, keystore, accountsConfig)
 		if err != nil {
 			return err
@@ -437,12 +485,13 @@ func (backend *Backend) createAndAddAccount(coin coinpkg.Coin, persistedConfig *
 			}
 
 			erc20Config := &config.Account{
-				Inactive:       persistedConfig.Inactive,
-				CoinCode:       erc20CoinCode,
-				Name:           tokenName,
-				Code:           erc20AccountCode,
-				Configurations: persistedConfig.Configurations,
-				ActiveTokens:   nil,
+				Inactive:            persistedConfig.Inactive,
+				HiddenBecauseUnused: persistedConfig.HiddenBecauseUnused,
+				CoinCode:            erc20CoinCode,
+				Name:                tokenName,
+				Code:                erc20AccountCode,
+				Configurations:      persistedConfig.Configurations,
+				ActiveTokens:        nil,
 			}
 
 			backend.createAndAddAccount(token, erc20Config)

@@ -65,7 +65,7 @@ class ManageAccounts extends Component<Props, State> {
   private renderAccounts = () => {
     const { accounts, showTokens } = this.state;
     const { t } = this.props;
-    return accounts.filter(account => !account.isToken).map(account => {
+    return accounts.filter(account => !account.isToken && !account.hidden).map(account => {
       const active = account.active;
       const tokensVisible = showTokens[account.code];
       return (

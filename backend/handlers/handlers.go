@@ -330,6 +330,7 @@ type activeToken struct {
 
 type accountJSON struct {
 	Active                bool               `json:"active"`
+	Hidden                bool               `json:"hidden"`
 	CoinCode              coinpkg.Code       `json:"coinCode"`
 	CoinUnit              string             `json:"coinUnit"`
 	CoinName              string             `json:"coinName"`
@@ -345,6 +346,7 @@ func newAccountJSON(account accounts.Interface, activeTokens []activeToken) *acc
 	isToken := ok && eth.ERC20Token() != nil
 	return &accountJSON{
 		Active:                !account.Config().Config.Inactive,
+		Hidden:                account.Config().Config.HiddenBecauseUnused,
 		CoinCode:              account.Coin().Code(),
 		CoinUnit:              account.Coin().Unit(false),
 		CoinName:              account.Coin().Name(),

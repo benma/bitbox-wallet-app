@@ -175,7 +175,7 @@ class App extends Component<Props, State> {
   };
 
   private activeAccounts = (): IAccount[] => {
-    return this.state.accounts.filter(acct => acct.active);
+    return this.state.accounts.filter(acct => acct.active && !acct.hidden);
   };
 
   public render() {
@@ -213,4 +213,3 @@ class App extends Component<Props, State> {
 
 const HOC = translate()(App);
 export { HOC as App };
-
