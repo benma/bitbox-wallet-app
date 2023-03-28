@@ -977,6 +977,9 @@ func (backend *Backend) maybeAddHiddenUnusedAccounts() {
 func (backend *Backend) discoverAccount(account accounts.Interface) {
 	log := backend.log.WithField("accountCode", account.Config().Config.Code)
 
+	// TODO: if this is the first account and it is deactivated, do not do an scanning and
+	// discovery.
+
 	account.Initialize()
 	txs, err := account.Transactions()
 	if err != nil {
