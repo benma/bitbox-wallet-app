@@ -631,8 +631,10 @@ func (account *Account) ensureAddresses() {
 		for {
 			newAddresses, err := addressChain.EnsureAddresses()
 			if err != nil {
-				// TODO
-				panic(err)
+				if !account.isClosed() {
+					// TODO
+					panic(err)
+				}
 			}
 			if len(newAddresses) == 0 {
 				break
