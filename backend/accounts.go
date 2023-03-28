@@ -845,6 +845,10 @@ func (backend *Backend) initAccounts() {
 
 	backend.emitAccountsStatusChanged()
 
+	for i := range backend.accounts {
+		go backend.discoverAccount(backend.accounts[i])
+	}
+
 	// The updater fetches rates only for active accounts, so this seems the most
 	// appropriate place to update exchange rate configuration.
 	// Every time fiats or coins list is changed in the UI settings, ReinitializedAccounts
@@ -942,5 +946,36 @@ func (backend *Backend) maybeAddHiddenUnusedAccounts() {
 	})
 	if err != nil {
 		backend.log.WithError(err).Error("maybeAddHiddenUnusedAccounts failed")
+	}
+}
+
+func (backend *Backend) discoverAccount(account accounts.Interface) {
+	log := backend.log.WithField("accountCode", account.Config().Config.Code)
+
+	account.Initialize()
+	if account.Config().Config.HiddenBecauseUnused {
+		txs, err := account.Transactions()
+		if err != nil {
+			log.WithError(err).Error("discoverAccount")
+			return
+		}
+		if len(txs) > 0 {
+			log.Info("discovered used account")
+			account.Config().Config.HiddenBecauseUnused = false
+			backend.emitAccountsStatusChanged()
+			err := backend.config.ModifyAccountsConfig(func(accountsConfig *config.AccountsConfig) error {
+				acct := accountsConfig.Lookup(account.Config().Config.Code)
+				if acct == nil {
+					return errp.Newf("could not find account")
+				}
+				acct.HiddenBecauseUnused = false
+				return nil
+			})
+			if err != nil {
+				log.WithError(err).Error("discoverAccount")
+				return
+			}
+			backend.maybeAddHiddenUnusedAccounts()
+		}
 	}
 }
