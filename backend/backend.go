@@ -447,7 +447,7 @@ func (backend *Backend) Start() <-chan interface{} {
 	}
 
 	defer backend.accountsAndKeystoreLock.Lock()()
-	backend.initPersistedAccounts()
+	backend.initPersistedAccounts(nil)
 	backend.emitAccountsStatusChanged()
 
 	backend.ratesUpdater.StartCurrentRates()
@@ -504,7 +504,7 @@ func (backend *Backend) registerKeystore(keystore keystore.Keystore) {
 		log.WithError(err).Error("Could not persist default accounts")
 	}
 
-	backend.initAccounts()
+	backend.initAccounts(nil)
 
 	backend.aoppKeystoreRegistered()
 }
@@ -529,7 +529,7 @@ func (backend *Backend) DeregisterKeystore() {
 	backend.uninitAccounts()
 	// TODO: classify accounts by keystore, remove only the ones belonging to the deregistered
 	// keystore. For now we just remove all, then re-add the rest.
-	backend.initPersistedAccounts()
+	backend.initPersistedAccounts(nil)
 	backend.emitAccountsStatusChanged()
 }
 

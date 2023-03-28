@@ -678,12 +678,21 @@ func (backend *Backend) persistETHAccountConfig(
 }
 
 // The accountsAndKeystoreLock must be held when calling this function.
-func (backend *Backend) initPersistedAccounts() {
+func (backend *Backend) initPersistedAccounts(alreadyLoadedAccounts []accounts.Interface) {
 	if backend.keystore == nil {
 		return
 	}
 
 	backend.maybeAddHiddenUnusedAccounts()
+
+	lookup := func(accounts []accounts.Interface, code accountsTypes.Code) accounts.Interface {
+		for _, acct := range accounts {
+			if acct.Config().Config.Code == code {
+				return acct
+			}
+		}
+		return nil
+	}
 
 	// Only load accounts which belong to connected keystores.
 	rootFingerprint, err := backend.keystore.RootFingerprint()
@@ -718,7 +727,17 @@ outer:
 			}
 		}
 
-		backend.createAndAddAccount(coin, account)
+		alreadyLoadedAccount := lookup(alreadyLoadedAccounts, account.Code)
+		if alreadyLoadedAccount != nil {
+			// We reuse a preivously created account, but update some of its config from the
+			// persisted config.
+			alreadyLoadedAccount.Config().Config.Inactive = account.Inactive
+			alreadyLoadedAccount.Config().Config.Name = account.Name
+			alreadyLoadedAccount.Config().Config.HiddenBecauseUnused = account.HiddenBecauseUnused
+			backend.accounts = append(backend.accounts, alreadyLoadedAccount)
+		} else {
+			backend.createAndAddAccount(coin, account)
+		}
 	}
 }
 
@@ -837,11 +856,10 @@ func (backend *Backend) updatePersistedAccounts(
 }
 
 // The accountsAndKeystoreLock must be held when calling this function.
-func (backend *Backend) initAccounts() {
-	// Since initAccounts replaces all previous accounts, we need to properly close them first.
-	backend.uninitAccounts()
-
-	backend.initPersistedAccounts()
+func (backend *Backend) initAccounts(alreadyLoadedAccounts []accounts.Interface) {
+	previousAccounts := backend.accounts
+	backend.accounts = []accounts.Interface{}
+	backend.initPersistedAccounts(previousAccounts)
 
 	backend.emitAccountsStatusChanged()
 
@@ -863,7 +881,7 @@ func (backend *Backend) ReinitializeAccounts() {
 	defer backend.accountsAndKeystoreLock.Lock()()
 
 	backend.log.Info("Reinitializing accounts")
-	backend.initAccounts()
+	backend.initAccounts(nil)
 }
 
 // The accountsAndKeystoreLock must be held when calling this function.
@@ -976,6 +994,7 @@ func (backend *Backend) discoverAccount(account accounts.Interface) {
 				return
 			}
 			backend.maybeAddHiddenUnusedAccounts()
+			backend.ReinitializeAccounts()
 		}
 	}
 }
