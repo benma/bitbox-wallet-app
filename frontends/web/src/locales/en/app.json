@@ -1449,6 +1449,7 @@
     "weight": "Weight"
   },
   "transactions": {
+    "errorLoadTransactions": "There was an error loading the transactions",
     "placeholder": "No transactions yet."
   },
   "unknownError": "An unknown error occurred: {{errorMessage}}",
