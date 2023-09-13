@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import goserver.Goserver;
+import ch.shiftcrypto.bitboxapp.BiometricAuthHelper;
 
 public class MainActivity extends AppCompatActivity {
     private final int PERMISSIONS_REQUEST_CAMERA_QRCODE = 0;
@@ -364,6 +365,37 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         Util.log("lifecycle: onResume");
+
+        final WebView vw = (WebView)findViewById(R.id.vw);
+        vw.setVisibility(View.INVISIBLE);
+        BiometricAuthHelper.showAuthenticationPrompt(this, new BiometricAuthHelper.AuthCallback() {
+            @Override
+            public void onSuccess() {
+                // Authenticated successfully
+                vw.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onFailure() {
+                // Failed or cancelled
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Close BitBoxApp")
+                        .setMessage("Do you really want to exit?")
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                Util.quitApp(MainActivity.this);
+                            }
+                        })
+                        .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .show();
+            }
+        });
+
         // This is only called reliably when USB is attached with android:launchMode="singleTop"
 
         // Usb device list is updated on ATTACHED / DETACHED intents.
@@ -518,17 +550,7 @@ public class MainActivity extends AppCompatActivity {
             .setMessage("Do you really want to exit?")
             .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
-                    // Move to background to avoid possible auto-restart after app exit.
-                    // When in foreground, the system may assume the process quit
-                    // unexpectedly and can try restarting it: Android can't tell
-                    // whether the app exited on purpose, suddenly crashed or terminated
-                    // by the system to reclaim resources.
-                    moveTaskToBack(true);
-                    // Send SIGKILL signal to the app's process and let the system shut it down.
-                    Process.killProcess(Process.myPid());
-                    // If the above killProcess didn't work and we're still here,
-                    // simply terminate the JVM as the last resort.
-                    System.exit(0);
+                   Util.quitApp(MainActivity.this);
                 }
             })
             .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
