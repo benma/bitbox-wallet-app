@@ -196,7 +196,6 @@ func NewHandlers(
 	getAPIRouterNoError(apiRouter)("/version", handlers.getVersionHandler).Methods("GET")
 	getAPIRouterNoError(apiRouter)("/testing", handlers.getTestingHandler).Methods("GET")
 	getAPIRouterNoError(apiRouter)("/account-add", handlers.postAddAccountHandler).Methods("POST")
-	getAPIRouterNoError(apiRouter)("/keystores", handlers.getKeystoresHandler).Methods("GET")
 	getAPIRouterNoError(apiRouter)("/accounts", handlers.getAccountsHandler).Methods("GET")
 	getAPIRouter(apiRouter)("/accounts/total-balance", handlers.getAccountsTotalBalanceHandler).Methods("GET")
 	getAPIRouterNoError(apiRouter)("/set-account-active", handlers.postSetAccountActiveHandler).Methods("POST")
@@ -497,21 +496,6 @@ func (handlers *Handlers) postAddAccountHandler(r *http.Request) interface{} {
 		return response{Success: false, ErrorMessage: err.Error()}
 	}
 	return response{Success: true, AccountCode: accountCode}
-}
-
-func (handlers *Handlers) getKeystoresHandler(_ *http.Request) interface{} {
-	type json struct {
-		Type keystore.Type `json:"type"`
-	}
-	keystores := []*json{}
-
-	keystore := handlers.backend.Keystore()
-	if keystore != nil {
-		keystores = append(keystores, &json{
-			Type: keystore.Type(),
-		})
-	}
-	return keystores
 }
 
 func (handlers *Handlers) getAccountsHandler(_ *http.Request) interface{} {

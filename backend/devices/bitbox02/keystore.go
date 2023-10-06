@@ -47,11 +47,6 @@ type keystore struct {
 	rootFinger   []byte // cached result of RootFingerprint
 }
 
-// Type implements keystore.Keystore.
-func (keystore *keystore) Type() keystorePkg.Type {
-	return keystorePkg.TypeHardware
-}
-
 // RootFingerprint implements keystore.Keystore.
 func (keystore *keystore) RootFingerprint() ([]byte, error) {
 	keystore.rootFingerMu.Lock()

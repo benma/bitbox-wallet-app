@@ -23,17 +23,6 @@ import (
 	"github.com/digitalbitbox/bitbox-wallet-app/backend/signing"
 )
 
-// Type denotes the type of a keystore.
-type Type string
-
-const (
-	// TypeHardware means the keystore is provided by a hardware wallet.
-	TypeHardware Type = "hardware"
-	// TypeSoftware mans the keystore is provided by a software (hot) wallet. Currently only used in
-	// devmode for testing.
-	TypeSoftware Type = "software"
-)
-
 // ErrSigningAborted is used when the user aborts a signing in process (e.g. abort on HW wallet).
 var ErrSigningAborted = errors.New("signing aborted by user")
 
@@ -41,9 +30,6 @@ var ErrSigningAborted = errors.New("signing aborted by user")
 //
 //go:generate moq -pkg mocks -out mocks/keystore.go . Keystore
 type Keystore interface {
-	// Type denotes the type of the keystore.
-	Type() Type
-
 	// RootFingerprint returns the keystore's root fingerprint, which is the first 32 bits of the
 	// hash160 of the pubkey at the keypath m/.
 	//
