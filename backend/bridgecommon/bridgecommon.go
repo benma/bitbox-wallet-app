@@ -19,6 +19,7 @@ package bridgecommon
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"runtime"
 	"runtime/debug"
@@ -267,17 +268,19 @@ func Serve(
 	mu.Lock()
 	defer mu.Unlock()
 
-	if globalShutdown != nil {
-		panic("already running; must call Shutdown()")
-	}
-
-	globalCommunication = communication
 	log := logging.Get().WithGroup("server")
 	log.Info("--------------- Started application --------------")
 	log.WithField("goos", runtime.GOOS).
 		WithField("goarch", runtime.GOARCH).
 		WithField("version", backend.Version).
 		Info("environment")
+
+	if globalShutdown != nil {
+		log.Debug(fmt.Sprintf("LOL 1 %x"), globalShutdown)
+		panic("already running; must call Shutdown()")
+	}
+
+	globalCommunication = communication
 
 	var err error
 	globalBackend, err = backend.NewBackend(
@@ -303,6 +306,7 @@ func Serve(
 		globalBackend = nil
 		globalShutdown = nil
 	}
+	log.Debug(fmt.Sprintf("LOL 2 %x"), globalShutdown)
 
 	globalToken = hex.EncodeToString(random.BytesOrPanic(16))
 
