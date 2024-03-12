@@ -67,7 +67,7 @@ github.com/digitalbitbox/block-client-go/electrum/types
 github.com/digitalbitbox/block-client-go/failover
 github.com/digitalbitbox/block-client-go/jsonrpc
 github.com/digitalbitbox/block-client-go/jsonrpc/types
-# github.com/digitalbitbox/usb v0.0.0-20230208083750-001c519abaff
+# github.com/digitalbitbox/usb v0.0.0-20240312153305-be5603c825e0
 ## explicit; go 1.12
 github.com/digitalbitbox/usb
 github.com/digitalbitbox/usb/hidapi
@@ -75,9 +75,6 @@ github.com/digitalbitbox/usb/hidapi/hidapi
 github.com/digitalbitbox/usb/hidapi/libusb
 github.com/digitalbitbox/usb/hidapi/mac
 github.com/digitalbitbox/usb/hidapi/windows
-github.com/digitalbitbox/usb/libusb
-github.com/digitalbitbox/usb/libusb/libusb
-github.com/digitalbitbox/usb/libusb/libusb/os
 # github.com/ethereum/go-ethereum v1.10.21
 ## explicit; go 1.17
 github.com/ethereum/go-ethereum

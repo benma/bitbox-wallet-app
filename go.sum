@@ -63,8 +63,8 @@ github.com/digitalbitbox/bitbox02-api-go v0.0.0-20240220211529-3ff3e90d0f52 h1:u
 github.com/digitalbitbox/bitbox02-api-go v0.0.0-20240220211529-3ff3e90d0f52/go.mod h1:JrokkR9J1STvq40gDemLfpUHdmRYSOnKqBIGXPxLFXY=
 github.com/digitalbitbox/block-client-go v0.0.0-20240228201430-dd85a15ace33 h1:W4aeOII3U0zuzvcRejcCoa+1yGFrgJa082VRxwvVGhY=
 github.com/digitalbitbox/block-client-go v0.0.0-20240228201430-dd85a15ace33/go.mod h1:zbeSf0Y9eGKQBx4ZE3lMJF1Wt2cjpM8m3VFiZC3Nv9w=
-github.com/digitalbitbox/usb v0.0.0-20230208083750-001c519abaff h1:2SjR45Wi7pjTnfEE1HEqVN0o+nxeyf9hvMLbI7aEEuM=
-github.com/digitalbitbox/usb v0.0.0-20230208083750-001c519abaff/go.mod h1:pL1FOHV3syui/8kkVB+ViszQTQncj433lmWq8uUxy0o=
+github.com/digitalbitbox/usb v0.0.0-20240312153305-be5603c825e0 h1:kXoPK+iNahfFH+z6Sq9b0ttfr+0VEJBnQxRE4/+VfRA=
+github.com/digitalbitbox/usb v0.0.0-20240312153305-be5603c825e0/go.mod h1:pL1FOHV3syui/8kkVB+ViszQTQncj433lmWq8uUxy0o=
 github.com/edsrzf/mmap-go v1.0.0 h1:CEBF7HpRnUCSJgGUb5h1Gm7e3VkmVDrR8lvWVLtrOFw=
 github.com/ethereum/go-ethereum v1.10.21 h1:5lqsEx92ZaZzRyOqBEXux4/UR06m296RGzN3ol3teJY=
 github.com/ethereum/go-ethereum v1.10.21/go.mod h1:EYFyF19u3ezGLD4RqOkLq+ZCXzYbLoNDdZlMt7kyKFg=

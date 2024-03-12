@@ -9,7 +9,7 @@ require (
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/digitalbitbox/bitbox02-api-go v0.0.0-20240220211529-3ff3e90d0f52
 	github.com/digitalbitbox/block-client-go v0.0.0-20240228201430-dd85a15ace33
-	github.com/digitalbitbox/usb v0.0.0-20230208083750-001c519abaff
+	github.com/digitalbitbox/usb v0.0.0-20240312153305-be5603c825e0
 	github.com/ethereum/go-ethereum v1.10.21
 	github.com/flynn/noise v1.1.0
 	github.com/gorilla/mux v1.8.1
