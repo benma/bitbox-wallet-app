@@ -20,6 +20,9 @@
 #include <QWebEnginePage>
 #include <QWebChannel>
 #include <QWebEngineUrlRequestInterceptor>
+#include <QWebEngineUrlSchemeHandler>
+#include <QWebEngineUrlRequestJob>
+#include <QMimeDatabase>
 #include <QContextMenuEvent>
 #include <QMenu>
 #include <QRegularExpression>
@@ -107,12 +110,32 @@ public:
     }
 };
 
+class SchemeHandler : public QWebEngineUrlSchemeHandler {
+public:
+    void requestStarted(QWebEngineUrlRequestJob *request) override {
+        QUrl url = request->requestUrl();
+        QString path = url.path();
+
+        QMimeDatabase mimeDb;
+        QMimeType mimeType = mimeDb.mimeTypeForFile(path, QMimeDatabase::MatchExtension);
+        // Read resource from QRC (local static assets).
+        auto file = new QFile(":" + path);
+        if (file->open(QIODevice::ReadOnly)) {
+            request->reply(mimeType.name().toUtf8(), file);
+            file->setParent(request);
+        } else {
+            delete file;
+            request->fail(QWebEngineUrlRequestJob::UrlNotFound);
+        }
+    }
+};
+
 class RequestInterceptor : public QWebEngineUrlRequestInterceptor {
 public:
     explicit RequestInterceptor() : QWebEngineUrlRequestInterceptor() { }
     void interceptRequest(QWebEngineUrlRequestInfo& info) override {
         // Do not block qrc:/ local pages or js blobs
-        if (info.requestUrl().scheme() == "qrc" || info.requestUrl().scheme() == "blob") {
+        if (info.requestUrl().scheme() == "foobar" || info.requestUrl().scheme() == "blob") {
             return;
         }
 
@@ -122,8 +145,8 @@ public:
         // We treat the onramp page specially because we need to allow onramp
         // widgets to load in an iframe as well as let them open external links
         // in a browser.
-        bool onBuyPage = currentUrl.contains(QRegularExpression("^qrc:/buy/.*$"));
-        bool onBitsurancePage = currentUrl.contains(QRegularExpression("^qrc:/bitsurance/.*$"));
+        bool onBuyPage = currentUrl.contains(QRegularExpression("^foobar:/buy/.*$"));
+        bool onBitsurancePage = currentUrl.contains(QRegularExpression("^foobar:/bitsurance/.*$"));
         if (onBuyPage || onBitsurancePage) {
             if (info.firstPartyUrl().toString() == info.requestUrl().toString()) {
                 // A link with target=_blank was clicked.
@@ -136,7 +159,7 @@ public:
 
         // All the requests originated in the wallet-connect section are allowed, as they are needed to
         // load the Dapp logos and it is not easy to filter out non-images requests.
-        bool onWCPage = currentUrl.contains(QRegularExpression("^qrc:/account/[^\/]+/wallet-connect/.*$"));
+        bool onWCPage = currentUrl.contains(QRegularExpression("^foobar:/account/[^\/]+/wallet-connect/.*$"));
         if (onWCPage) {
           return;
         }
@@ -351,6 +374,8 @@ int main(int argc, char *argv[])
 
     RequestInterceptor interceptor;
     view->page()->profile()->setUrlRequestInterceptor(&interceptor);
+    SchemeHandler schemeHandler;
+    view->page()->profile()->installUrlSchemeHandler("foobar", &schemeHandler);
     QObject::connect(
         view->page(),
         &QWebEnginePage::featurePermissionRequested,
@@ -367,7 +392,7 @@ int main(int argc, char *argv[])
     channel.registerObject("backend", webClass);
     view->page()->setWebChannel(&channel);
     view->show();
-    view->load(QUrl("qrc:/index.html"));
+    view->load(QUrl("foobar:/index.html"));
 
     // Create TrayIcon
     {
