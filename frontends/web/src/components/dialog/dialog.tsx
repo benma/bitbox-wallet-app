@@ -17,6 +17,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CloseXDark, CloseXWhite } from '@/components/icon';
+import { useBackButton } from '@/hooks/backbutton';
 import { useEsc, useKeydown } from '@/hooks/keyboard';
 import style from './dialog.module.css';
 
@@ -158,7 +159,6 @@ export const Dialog = ({
     }
   }, [deactivateModal]);
 
-
   useEsc(useCallback(() => {
     if (!renderDialog) {
       return;
@@ -167,6 +167,17 @@ export const Dialog = ({
       deactivate(true);
     }
   }, [renderDialog, deactivate]));
+
+  // Close dialog on back button press in Android.
+  useBackButton(useCallback(() => {
+    if (!renderDialog) {
+      return true;
+    }
+    if (!disableEscape) {
+      deactivate(true);
+    }
+    return false;
+  }, [renderDialog, disableEscape, deactivate]));
 
   useEffect(() => {
     if (open) {

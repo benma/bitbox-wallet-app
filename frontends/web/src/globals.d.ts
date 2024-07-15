@@ -24,6 +24,7 @@ export declare global {
         }
         onMobileCallResponse?: (queryID: number, response: unknown) => void;
         onMobilePushNotification?: (msg: TPayload) => void;
+        onBackButtonPressed?: () => boolean;
         runningOnIOS?: boolean;
         webkit?: {
           messageHandlers: {

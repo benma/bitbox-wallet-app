@@ -601,25 +601,37 @@ public class MainActivity extends AppCompatActivity {
     // https://developer.android.com/guide/components/activities/tasks-and-back-stack
     @Override
     public void onBackPressed() {
-        final WebView vw = (WebView)findViewById(R.id.vw);
-        if (vw.canGoBack()) {
-            vw.goBack();
-            return;
-        }
-        new AlertDialog.Builder(MainActivity.this)
-            .setTitle("Close BitBoxApp")
-            .setMessage("Do you really want to exit?")
-            .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    Util.quit(MainActivity.this);
-                }
-            })
-            .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                }
-            })
-            .setIcon(android.R.drawable.ic_dialog_alert)
-            .show();
+        runOnUiThread(new Runnable() {
+            final WebView vw = (WebView) findViewById(R.id.vw);
+            @Override
+            public void run() {
+                vw.evaluateJavascript("window.onBackButtonPressed();", value -> {
+                    boolean doDefault = Boolean.parseBoolean(value);
+                    if (doDefault) {
+                        // Default behavior: go back in history if we can, otherwise prompt user
+                        // if they want to quit the app.
+                        if (vw.canGoBack()) {
+                            vw.goBack();
+                            return;
+                        }
+                        new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("Close BitBoxApp")
+                                .setMessage("Do you really want to exit?")
+                                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        Util.quit(MainActivity.this);
+                                    }
+                                })
+                                .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                    }
+                                })
+                                .setIcon(android.R.drawable.ic_dialog_alert)
+                                .show();
+                    }
+                });
+            }
+        });
     }
 }

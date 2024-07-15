@@ -15,6 +15,7 @@
  */
 
 import { ReactNode } from 'react';
+import { BackButtonStackProvider } from './BackButtonStackContext';
 import { DarkModeProvider } from './DarkmodeProvider';
 import { AppProvider } from './AppProvider';
 import { WCWeb3WalletProvider } from './WCWeb3WalletProvider';
@@ -28,15 +29,17 @@ type Props = {
 export const Providers = ({ children }: Props) => {
   return (
     <AppProvider>
-      <DarkModeProvider>
-        <LocalizationProvider>
-          <RatesProvider>
-            <WCWeb3WalletProvider>
-              {children}
-            </WCWeb3WalletProvider>
-          </RatesProvider>
-        </LocalizationProvider>
-      </DarkModeProvider>
+      <BackButtonStackProvider>
+        <DarkModeProvider>
+          <LocalizationProvider>
+            <RatesProvider>
+              <WCWeb3WalletProvider>
+                {children}
+              </WCWeb3WalletProvider>
+            </RatesProvider>
+          </LocalizationProvider>
+        </DarkModeProvider>
+      </BackButtonStackProvider>
     </AppProvider>
   );
 };
