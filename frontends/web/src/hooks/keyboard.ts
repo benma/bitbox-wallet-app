@@ -17,19 +17,30 @@
 import { useEffect } from 'react';
 
 /**
+ * gets fired on each keydown and executes the provided callback.
+ */
+export const useKeydown = (
+  callback: (e: KeyboardEvent) => void
+) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      callback(e);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [callback]);
+};
+
+/**
  * useEsc handles ESC key.
  * gets fired on ESC keydown and executes the provided callback.
  */
 export const useEsc = (
   callback: () => void
 ) => {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        callback();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [callback]);
+  useKeydown((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      callback();
+    }
+  });
 };
