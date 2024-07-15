@@ -601,6 +601,11 @@ public class MainActivity extends AppCompatActivity {
     // https://developer.android.com/guide/components/activities/tasks-and-back-stack
     @Override
     public void onBackPressed() {
+        final WebView vw = (WebView)findViewById(R.id.vw);
+        if (vw.canGoBack()) {
+            vw.goBack();
+            return;
+        }
         new AlertDialog.Builder(MainActivity.this)
             .setTitle("Close BitBoxApp")
             .setMessage("Do you really want to exit?")
