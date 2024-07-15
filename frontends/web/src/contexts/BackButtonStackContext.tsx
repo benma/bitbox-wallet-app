@@ -51,11 +51,11 @@ export const BackButtonStackProvider = ({ children }: TProviderProps) => {
 
   const pushHandler = useCallback((handler: THandler) => {
     setStack((prevStack) => [...prevStack, handler]);
-  }, []);
+  }, [setStack]);
 
   const popHandler = useCallback(() => {
     setStack((prevStack) => prevStack.slice(0, -1));
-  }, []);
+  }, [setStack]);
 
   const callTopHandler = useCallback(() => {
     // If guide is shown, back button should close that first.
@@ -74,7 +74,9 @@ export const BackButtonStackProvider = ({ children }: TProviderProps) => {
 
   // Install back button callback that is called from Android.
   useEffect(() => {
-    window.onBackButtonPressed = callTopHandler;
+    window.onBackButtonPressed = () => {
+      return callTopHandler();
+    };
     return () => {
       delete window.onBackButtonPressed;
     };

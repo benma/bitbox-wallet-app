@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useContext, useEffect } from 'react';
+import { useCallback, useContext, useEffect } from 'react';
 import { BackButtonStackContext, THandler } from '@/contexts/BackButtonStackContext';
 
 /*
@@ -35,4 +35,13 @@ export const useBackButton = (handler: THandler): void => {
     pushHandler(handler);
     return popHandler;
   }, [handler, pushHandler, popHandler]);
+};
+
+// Disable Android back button if `disable` is true.
+export const useDisableBackButton = (disable: boolean): void => {
+  console.log('FOO');
+  useBackButton(useCallback(() => {
+    console.log('BACK LOL');
+    return !disable;
+  }, []));
 };

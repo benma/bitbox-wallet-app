@@ -166,7 +166,7 @@ export const Dialog = ({
     if (!disableEscape) {
       deactivate(true);
     }
-  }, [renderDialog, deactivate]));
+  }, [renderDialog, disableEscape, deactivate]));
 
   // Close dialog on back button press in Android.
   useBackButton(useCallback(() => {

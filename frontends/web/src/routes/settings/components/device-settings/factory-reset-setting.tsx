@@ -16,6 +16,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { SettingsItem } from '@/routes/settings/components/settingsItem/settingsItem';
+import { useDisableBackButton } from '@/hooks/backbutton';
 import { ChevronRightDark, WarningOutlined } from '@/components/icon';
 import { Dialog, DialogButtons } from '@/components/dialog/dialog';
 import { Button, Checkbox } from '@/components/forms';
@@ -36,10 +37,6 @@ type TDialog = {
     understand: boolean;
     handleUnderstandChange: (e: ChangeEvent<HTMLInputElement>) => void;
     handleReset: () => void;
-}
-
-type TWaitDialog = {
-    isConfirming: boolean;
 }
 
 const FactoryResetSetting = ({ deviceID }: TProps) => {
@@ -89,9 +86,8 @@ const FactoryResetSetting = ({ deviceID }: TProps) => {
         handleUnderstandChange={handleUnderstandChange}
         handleReset={reset}
       />
-      <FactoryResetWaitDialog isConfirming={isConfirming} />
+      { isConfirming ? <FactoryResetWaitDialog /> : null }
     </>
-
   );
 };
 
@@ -133,11 +129,11 @@ const FactoryResetDialog = ({
     </Dialog>);
 };
 
-const FactoryResetWaitDialog = ({ isConfirming }: TWaitDialog) => {
+const FactoryResetWaitDialog = () => {
   const { t } = useTranslation();
-  if (!isConfirming) {
-    return null;
-  }
+  // Disable Android
+  useDisableBackButton(true);
+
   return (
     <WaitDialog
       title={t('reset.title')} >
