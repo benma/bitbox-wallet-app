@@ -39,7 +39,6 @@ export const BackButtonContext = createContext<TProps>({
 
 let queue: {
   action: 'pushState' | 'back';
-  invoke?: () => void;
 }[] = [];
 let isProcessing = false;
 let ignoreNext = 0;
@@ -60,16 +59,14 @@ function processQueue() {
   } else {
     console.log('QUEUE POP');
     window.history.back();
-  }
-  if (item.invoke) {
-    item.invoke();
+    setTimeout(() => console.log('lol', window.history.state), 500);
   }
 
   // Ensure the browser has time to process each navigation
   setTimeout(() => {
     isProcessing = false;
     processQueue();
-  }, 100); // Adjust delay based on testing
+  }, 1000); // Adjust delay based on testing
 }
 
 type TProviderProps = {

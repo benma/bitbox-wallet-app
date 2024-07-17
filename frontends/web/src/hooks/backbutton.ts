@@ -37,6 +37,7 @@ export const useBackButton = (handler: THandler) => {
 // A convenience component that makes sure useBackButton is only used when the component is rendered.
 // This avoids complicated useEffect() uses to make sure useBackButton is only active depending on
 // rendering conditions.
+// This also is useful if you want to use this hook in a component that is still class-based.
 export const UseBackButton = ({ handler }: { handler: THandler }) => {
   useBackButton(handler);
   return null;
