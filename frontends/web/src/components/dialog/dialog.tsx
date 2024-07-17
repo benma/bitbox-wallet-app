@@ -17,7 +17,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CloseXDark, CloseXWhite } from '@/components/icon';
-import { useBackButton } from '@/hooks/backbutton';
+import { UseBackButton } from '@/hooks/backbutton';
 import { useEsc, useKeydown } from '@/hooks/keyboard';
 import style from './dialog.module.css';
 
@@ -34,11 +34,6 @@ type TProps = {
     children: React.ReactNode;
     open: boolean;
 }
-
-const UseBackButton = ({ handler }: { handler: () => void; }) => {
-  useBackButton(handler);
-  return null;
-};
 
 export const Dialog = ({
   title,
