@@ -16,12 +16,11 @@
 
 import { useTranslation } from 'react-i18next';
 import { SettingsItem } from '@/routes/settings/components/settingsItem/settingsItem';
-import { ChevronRightDark, WarningOutlined } from '@/components/icon';
+import { ChevronRightDark, WarningOutlined, PointToBitBox02 } from '@/components/icon';
 import { Dialog, DialogButtons } from '@/components/dialog/dialog';
 import { Button, Checkbox } from '@/components/forms';
 import { ChangeEvent, useState, useEffect } from 'react';
 import { resetDevice } from '@/api/bitbox02';
-import { UseBackButton } from '@/hooks/backbutton';
 import { alertUser } from '@/components/alert/Alert';
 import styles from './factory-reset-setting.module.css';
 import { WaitDialog } from '@/components/wait-dialog/wait-dialog';
@@ -142,8 +141,8 @@ const FactoryResetWaitDialog = ({ isConfirming }: TWaitDialog) => {
   return (
     <WaitDialog
       title={t('reset.title')} >
-      <UseBackButton handler={() => {}}/>
       {t('bitbox02Interact.followInstructions')}
+      <PointToBitBox02 />
     </WaitDialog>
   );
 
