@@ -35,8 +35,8 @@ type TProps = {
     open: boolean;
 }
 
-const UseBackButton = () => {
-  useBackButton();
+const UseBackButton = ({ handler }: { handler: () => void; }) => {
+  useBackButton(handler);
   return null;
 };
 
@@ -164,6 +164,11 @@ export const Dialog = ({
     }
   }, [deactivateModal]);
 
+  const closeHandler = useCallback(() => {
+    if (!disableEscape) {
+      deactivate(true);
+    }
+  }, [disableEscape, deactivate]);
 
   useEsc(useCallback(() => {
     if (!renderDialog) {
@@ -200,7 +205,7 @@ export const Dialog = ({
 
   return (
     <div className={style.overlay} ref={overlayRef}>
-      <UseBackButton />
+      <UseBackButton handler={closeHandler}/>
       <div
         className={[style.modal, isSmall, isMedium, isLarge].join(' ')}
         ref={modalRef}>
