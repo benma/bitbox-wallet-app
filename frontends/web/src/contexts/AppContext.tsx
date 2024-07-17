@@ -19,6 +19,8 @@ import { Dispatch, SetStateAction, createContext } from 'react';
 export type TSidebarStatus = '' | 'forceHidden'
 export type TChartDisplay = 'week' | 'month' | 'year' | 'all';
 
+export type TBackHandler = () => void;
+
 type AppContextProps = {
     activeSidebar: boolean;
     guideShown: boolean;
@@ -33,6 +35,8 @@ type AppContextProps = {
     setSidebarStatus: Dispatch<SetStateAction<TSidebarStatus>>;
     setHideAmounts: Dispatch<SetStateAction<boolean>>;
     setChartDisplay: Dispatch<SetStateAction<TChartDisplay>>;
+    pushBackHandler: (handler: TBackHandler) => void;
+    popBackHandler: () => void;
     toggleGuide: () => void;
     toggleHideAmounts: () => void;
     toggleSidebar: () => void;

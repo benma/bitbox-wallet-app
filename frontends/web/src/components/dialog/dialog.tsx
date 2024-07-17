@@ -17,6 +17,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CloseXDark, CloseXWhite } from '@/components/icon';
+import { useBackButton } from '@/hooks/backbutton';
 import { useEsc, useKeydown } from '@/hooks/keyboard';
 import style from './dialog.module.css';
 
@@ -33,6 +34,11 @@ type TProps = {
     children: React.ReactNode;
     open: boolean;
 }
+
+const UseBackButton = () => {
+  useBackButton();
+  return null;
+};
 
 export const Dialog = ({
   title,
@@ -194,6 +200,7 @@ export const Dialog = ({
 
   return (
     <div className={style.overlay} ref={overlayRef}>
+      <UseBackButton />
       <div
         className={[style.modal, isSmall, isMedium, isLarge].join(' ')}
         ref={modalRef}>
