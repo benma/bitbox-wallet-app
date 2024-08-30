@@ -52,9 +52,12 @@ type TxProposal struct {
 	Fee         btcutil.Amount
 	Transaction *wire.MsgTx
 	// ChangeAddress is the address of the wallet to which the change of the transaction is sent.
-	ChangeAddress   *addresses.AccountAddress
-	PreviousOutputs PreviousOutputs
-	PaymentRequest  []*accounts.PaymentRequest
+	ChangeAddress        *addresses.AccountAddress
+	PreviousOutputs      PreviousOutputs
+	PaymentRequest       []*accounts.PaymentRequest
+	SilentPaymentAddress string
+	// OutIndex is the index of the output we send to.
+	OutIndex int
 }
 
 // Total is amount+fee.
@@ -197,6 +200,7 @@ func NewTx(
 	coin coinpkg.Coin,
 	spendableOutputs map[wire.OutPoint]UTXO,
 	output *wire.TxOut,
+	silentPaymentAddress string,
 	feePerKb btcutil.Amount,
 	changeAddress *addresses.AccountAddress,
 	log *logrus.Entry,
@@ -218,9 +222,13 @@ func NewTx(
 			return nil, err
 		}
 
+		outputPkScriptLen := len(output.PkScript)
+		if silentPaymentAddress != "" {
+			outputPkScriptLen = 34 // TODO double check
+		}
 		txSize := estimateTxSize(
 			toInputConfigurations(spendableOutputs, selectedOutPoints),
-			len(output.PkScript),
+			outputPkScriptLen,
 			len(changePKScript))
 		maxRequiredFee := feeForSerializeSize(feePerKb, txSize, log)
 		if selectedOutputsSum-targetAmount < maxRequiredFee {
@@ -263,14 +271,27 @@ func NewTx(
 
 		log.WithField("fee", finalFee).Debug("Preparing transaction")
 
+		outIndex := -1
+		for i, txOut := range unsignedTransaction.TxOut {
+			if txOut == output {
+				outIndex = i
+				break
+			}
+		}
+		if outIndex == -1 {
+			return nil, errp.New("could not find output")
+		}
+
 		setRBF(coin, unsignedTransaction)
 		return &TxProposal{
-			Coin:            coin,
-			Amount:          targetAmount,
-			Fee:             finalFee,
-			Transaction:     unsignedTransaction,
-			ChangeAddress:   changeAddress,
-			PreviousOutputs: previousOutputs,
+			Coin:                 coin,
+			Amount:               targetAmount,
+			Fee:                  finalFee,
+			Transaction:          unsignedTransaction,
+			ChangeAddress:        changeAddress,
+			PreviousOutputs:      previousOutputs,
+			SilentPaymentAddress: silentPaymentAddress,
+			OutIndex:             outIndex,
 		}, nil
 	}
 }

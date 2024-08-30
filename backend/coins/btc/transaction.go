@@ -29,7 +29,9 @@ import (
 	"github.com/BitBoxSwiss/bitbox-wallet-app/backend/coins/coin"
 	"github.com/BitBoxSwiss/bitbox-wallet-app/backend/signing"
 	"github.com/BitBoxSwiss/bitbox-wallet-app/util/errp"
+	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware"
 	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/wire"
 )
 
@@ -138,14 +140,32 @@ func (account *Account) newTx(args *accounts.TxProposalArgs) (
 	map[wire.OutPoint]*transactions.SpendableOutput, *maketx.TxProposal, error) {
 
 	account.log.Debug("Prepare new transaction")
-
-	address, err := account.coin.DecodeAddress(args.RecipientAddress)
-	if err != nil {
-		return nil, nil, err
-	}
-	pkScript, err := util.PkScriptFromAddress(address)
-	if err != nil {
-		return nil, nil, err
+	var pkScript []byte
+	var silentPaymentAddress string
+	hrp, _, _, err := firmware.DecodeSilentPaymentAddress(args.RecipientAddress)
+	if err == nil {
+		expectedHrp := ""
+		switch account.coin.Net().Net {
+		case chaincfg.MainNetParams.Net:
+			expectedHrp = "sp"
+		case chaincfg.TestNet3Params.Net:
+			expectedHrp = "tsp"
+		default:
+			return nil, nil, errp.WithStack(errors.ErrInvalidAddress)
+		}
+		if hrp != expectedHrp {
+			return nil, nil, errp.WithStack(errors.ErrInvalidAddress)
+		}
+		silentPaymentAddress = args.RecipientAddress
+	} else {
+		address, err := account.coin.DecodeAddress(args.RecipientAddress)
+		if err != nil {
+			return nil, nil, err
+		}
+		pkScript, err = util.PkScriptFromAddress(address)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 	utxo, err := account.transactions.SpendableOutputs()
 	if err != nil {
@@ -210,6 +230,7 @@ func (account *Account) newTx(args *accounts.TxProposalArgs) (
 			account.coin,
 			wireUTXO,
 			txOut,
+			silentPaymentAddress,
 			feeRatePerKb,
 			changeAddress,
 			account.log,

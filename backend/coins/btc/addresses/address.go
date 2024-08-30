@@ -115,6 +115,21 @@ func (address *AccountAddress) ID() string {
 	return string(address.PubkeyScriptHashHex())
 }
 
+// PublicKey returns the 33 byte compressed publickey behind
+func (address *AccountAddress) PublicKey() []byte {
+	publicKey := address.Configuration.PublicKey()
+	switch address.Configuration.ScriptType() {
+	case signing.ScriptTypeP2PKH, signing.ScriptTypeP2WPKHP2SH, signing.ScriptTypeP2WPKH:
+		return publicKey.SerializeCompressed()
+	case signing.ScriptTypeP2TR:
+		outputKey := txscript.ComputeTaprootKeyNoScript(publicKey)
+		return schnorr.SerializePubKey(outputKey)
+	default:
+		address.log.Panic("Unrecognized address type.")
+	}
+	panic("The end of the function cannot be reached.")
+}
+
 // EncodeForHumans implements accounts.Address.
 func (address *AccountAddress) EncodeForHumans() string {
 	return address.EncodeAddress()

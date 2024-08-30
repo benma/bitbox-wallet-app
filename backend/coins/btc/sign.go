@@ -58,7 +58,6 @@ func (account *Account) signTransaction(
 		GetAccountAddress:            account.getAddress,
 		GetPrevTx:                    getPrevTx,
 		Signatures:                   make([]*types.Signature, len(txProposal.Transaction.TxIn)),
-		SigHashes:                    txscript.NewTxSigHashes(txProposal.Transaction, previousOutputs),
 		FormatUnit:                   account.coin.formatUnit,
 	}
 
@@ -69,6 +68,9 @@ func (account *Account) signTransaction(
 	if err := keystore.SignTransaction(proposedTransaction); err != nil {
 		return err
 	}
+
+	// TODO: temporarily moved here, this would break SP support in the keystores other than bb02.
+	proposedTransaction.SigHashes = txscript.NewTxSigHashes(txProposal.Transaction, previousOutputs)
 
 	for index, input := range txProposal.Transaction.TxIn {
 		spentOutput := previousOutputs[input.PreviousOutPoint]
