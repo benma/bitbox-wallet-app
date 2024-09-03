@@ -86,7 +86,7 @@ jobs:
           path: frontends/qt/build/linux/bitbox-*.rpm
           name: BitBoxApp-linux-${{github.sha}}.rpm
   macos:
-    runs-on: macos-12
+    runs-on: macos-14
     env:
       GO_SRC_DIR: src/github.com/BitBoxSwiss/bitbox-wallet-app
     steps:
@@ -121,16 +121,21 @@ jobs:
           make qt-osx
           popd
         env:
-          OS_NAME: osx
           LDFLAGS: -L/usr/local/opt/qt@5/lib
           CPPFLAGS: -I/usr/local/opt/qt@5/include
-      - name: Archive app
+      - name: Archive Qt app
         run: >
           pushd $GOPATH/$GO_SRC_DIR/frontends/qt/build/osx;
           ditto -c -k --keepParent BitBox.app ${{github.workspace}}/BitBoxApp-macos.zip;
           popd;
-      - name: Upload app
+      - name: Upload Qt app
         uses: actions/upload-artifact@v4
         with:
           path: BitBoxApp-macos.zip
           name: BitBoxApp-macos-${{github.sha}}.zip
+      - name: Build iOS app
+        run: |
+          make gomobileinit
+          pushd $GOPATH/$GO_SRC_DIR
+          make ios
+          popd
