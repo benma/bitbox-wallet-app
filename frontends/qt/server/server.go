@@ -187,6 +187,7 @@ func serve(
 				authResult(true)
 			},
 			OnAuthSettingChangedFunc: func(bool) {},
+			OnBluetoothConnect:       func(string) {},
 		},
 	)
 }

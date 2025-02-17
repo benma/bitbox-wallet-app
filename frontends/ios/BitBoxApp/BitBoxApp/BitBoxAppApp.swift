@@ -40,29 +40,29 @@ protocol SetMessageHandlersProtocol {
 
 class GoEnvironment: NSObject, MobileserverGoEnvironmentInterfaceProtocol, UIDocumentInteractionControllerDelegate {
     private let bluetoothManager: BluetoothManager
-    
+
     init(bluetoothManager: BluetoothManager) {
         self.bluetoothManager = bluetoothManager
     }
-    
+
     func getSaveFilename(_ fileName: String?) -> String {
         let tempDirectory = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
         // fileName cannot be nil this is called by Go and Go strings cannot be nil/null.
         let fileURL = tempDirectory.appendingPathComponent(fileName!)
         return fileURL.path
     }
-    
+
     func auth() {
         authenticateUser { success in
             // TODO: enabling auth but entering wrong passcode does not remove auth screen
             MobileserverAuthResult(success)
         }
     }
-    
+
     func detectDarkTheme() -> Bool {
         return UIScreen.main.traitCollection.userInterfaceStyle == .dark
     }
-    
+
     func deviceInfo() -> MobileserverGoDeviceInfoInterfaceProtocol? {
         if !bluetoothManager.isConnected() {
             return nil
@@ -87,6 +87,10 @@ class GoEnvironment: NSObject, MobileserverGoEnvironmentInterfaceProtocol, UIDoc
 
     func onAuthSettingChanged(_ p0: Bool) {
         // TODO: hide app window contents in app switcher, maybe always not just when auth is on.
+    }
+
+    func bluetoothConnect(_ p0: String?) {
+        // TODO
     }
 
     func setDarkTheme(_ p0: Bool) {
@@ -159,7 +163,7 @@ class GoAPI: NSObject, MobileserverGoAPIInterfaceProtocol, SetMessageHandlersPro
 @main
 struct BitBoxAppApp: App {
     @StateObject private var bluetoothManager = BluetoothManager()
-    
+
     var body: some Scene {
         WindowGroup {
             GridLayout(alignment: .leading) {
