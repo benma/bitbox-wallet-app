@@ -2,6 +2,7 @@
   align-items: center;
   background-color: var(--background-secondary);
   border: none;
+  color: var(--color-default);
   display: flex;
   justify-content: space-between;
   padding: 16px;
@@ -13,9 +14,10 @@
   cursor: pointer;
 }
 
-.leftContent {
+.content {
   align-items: center;
   display: flex;
+  justify-content: space-between;
   width: 100%;
 }
 
