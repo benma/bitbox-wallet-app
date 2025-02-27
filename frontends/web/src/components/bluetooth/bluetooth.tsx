@@ -14,27 +14,45 @@
  * limitations under the License.
  */
 
+import { useTranslation } from 'react-i18next';
 import { useSync } from '@/hooks/api';
 import { connect, getState, syncState } from '@/api/bluetooth';
 import { runningInIOS } from '@/utils/env';
+import { ActionableItem } from '@/components/actionable-item/actionable-item';
+import { Badge } from '@/components/badge/badge';
+import styles from './bluetooth.module.css';
 
 const _Bluetooth = () => {
+  const { t } = useTranslation();
   const state = useSync(getState, syncState);
   if (!state) {
     return null;
   }
   return (
-    <span>
-      { state.peripherals.map(peripheral => {
-        return (
-          <p key={peripheral.identifier}>
-            { peripheral.identifier }
-            { peripheral.connectionFailed ? ' [failed]' : null }
-            <button onClick={() => connect(peripheral.identifier)}>connect</button>
-          </p>
-        );
-      })}
-    </span>
+    <>
+      <div className={styles.label}>
+        {t('bluetooth.select')}
+      </div>
+      <div className={styles.container}>
+        {state.peripherals.map(peripheral => {
+          return (
+            <ActionableItem
+              key={peripheral.identifier}
+              onClick={() => connect(peripheral.identifier)}>
+              <span>
+                { peripheral.identifier }
+                {' '}
+                { peripheral.connectionFailed ? (
+                  <Badge type="danger">
+                    {t('bluetooth.connectionFailed')}
+                  </Badge>
+                ) : null }
+              </span>
+            </ActionableItem>
+          );
+        })}
+      </div>
+    </>
   );
 };
 
