@@ -22,7 +22,7 @@ package mobileserver
 #import <Foundation/Foundation.h>
 const char* getSystemTimeZone() {
     NSTimeZone *timeZone = [NSTimeZone systemTimeZone];
-    NSString *timeZoneName = [timeZone description];
+    NSString *timeZoneName = [timeZone name];
     return [timeZoneName UTF8String];
 }
 */
@@ -47,11 +47,10 @@ func getSystemTimeZone() string {
 // This fix is copied from https://github.com/anyproto/anytype-heart/pull/775/ (referenced in the
 // above issue).
 func fixTimezone() {
-	tzDesc := getSystemTimeZone()
-	if len(tzDesc) == 0 {
+	tzName := strings.TrimSpace(getSystemTimeZone())
+	if len(tzName) == 0 {
 		return
 	}
-	tzName := strings.Split(tzDesc, " ")[0]
 	z, err := time.LoadLocation(tzName)
 	if err != nil {
 		return
