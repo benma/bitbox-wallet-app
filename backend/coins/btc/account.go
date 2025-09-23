@@ -23,6 +23,7 @@ import (
 	"path"
 	"sort"
 	"sync/atomic"
+	"time"
 
 	"github.com/BitBoxSwiss/bitbox-wallet-app/backend/accounts"
 	accountsTypes "github.com/BitBoxSwiss/bitbox-wallet-app/backend/accounts/types"
@@ -690,6 +691,14 @@ func (account *Account) ensureAddresses() {
 }
 
 func (account *Account) subscribeAddress(address *addresses.AccountAddress) {
+	number, err := account.subaccounts[0].signingConfiguration.AccountNumber()
+	if err != nil {
+		panic(err)
+	}
+	if number == 1 {
+		time.Sleep(100 * time.Millisecond)
+		fmt.Println("LOL")
+	}
 	account.coin.Blockchain().ScriptHashSubscribe(
 		account.Synchronizer.IncRequestsCounter,
 		address.PubkeyScriptHashHex(),
