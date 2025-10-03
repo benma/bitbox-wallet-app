@@ -1,6 +1,8 @@
 module github.com/BitBoxSwiss/bitbox-wallet-app
 
-go 1.24
+go 1.24.6
+
+toolchain go1.24.7
 
 require (
 	github.com/BitBoxSwiss/bitbox02-api-go v0.0.0-20250918124416-ba770921265e
@@ -28,6 +30,7 @@ require (
 )
 
 require (
+	github.com/ArkLabsHQ/fulmine/pkg/boltz v0.0.0-20250930164605-4be71aa3b377 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/aead/siphash v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.13.0 // indirect
@@ -47,6 +50,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/holiman/uint256 v1.3.1 // indirect
 	github.com/kkdai/bstream v1.0.0 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect

@@ -29,6 +29,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ArkLabsHQ/fulmine/pkg/boltz"
 	"github.com/BitBoxSwiss/bitbox-wallet-app/backend/accounts"
 	accountsTypes "github.com/BitBoxSwiss/bitbox-wallet-app/backend/accounts/types"
 	"github.com/BitBoxSwiss/bitbox-wallet-app/backend/arguments"
@@ -272,6 +273,9 @@ type Backend struct {
 
 // NewBackend creates a new backend with the given arguments.
 func NewBackend(arguments *arguments.Arguments, environment Environment) (*Backend, error) {
+	boltzApi := boltz.Api{}
+	_ = boltzApi
+
 	log := logging.Get().WithGroup("backend")
 	backendConfig, err := config.NewConfig(arguments.AppConfigFilename(), arguments.AccountsConfigFilename())
 	if err != nil {

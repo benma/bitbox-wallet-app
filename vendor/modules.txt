@@ -1,3 +1,6 @@
+# github.com/ArkLabsHQ/fulmine/pkg/boltz v0.0.0-20250930164605-4be71aa3b377
+## explicit; go 1.24.6
+github.com/ArkLabsHQ/fulmine/pkg/boltz
 # github.com/BitBoxSwiss/bitbox02-api-go v0.0.0-20250918124416-ba770921265e
 ## explicit; go 1.22
 github.com/BitBoxSwiss/bitbox02-api-go/api/bootloader
@@ -188,6 +191,9 @@ github.com/karalabe/hid/libusb/libusb/os
 # github.com/kkdai/bstream v1.0.0
 ## explicit; go 1.6
 github.com/kkdai/bstream
+# github.com/mitchellh/mapstructure v1.5.0
+## explicit; go 1.14
+github.com/mitchellh/mapstructure
 # github.com/mmcloughlin/addchain v0.4.0
 ## explicit; go 1.16
 github.com/mmcloughlin/addchain
