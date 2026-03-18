@@ -817,7 +817,6 @@ func (account *Account) GetUsedAddresses() ([]UsedAddress, error) {
 				continue
 			}
 
-			usedAddressIDsInTx := map[string]bool{}
 			for scriptHashHex := range txInfo.Addresses {
 				addr, addressType := account.lookupAddressByScriptHashHex(blockchain.ScriptHashHex(scriptHashHex))
 				if addr == nil {
@@ -833,10 +832,6 @@ func (account *Account) GetUsedAddresses() ([]UsedAddress, error) {
 						},
 					}
 				}
-				usedAddressIDsInTx[addressID] = true
-			}
-
-			for addressID := range usedAddressIDsInTx {
 				info := usedAddressesByID[addressID]
 
 				if txInfo.HeaderTimestamp != nil &&
