@@ -593,7 +593,6 @@ func (handlers *Handlers) getUsedAddresses(*http.Request) (interface{}, error) {
 	type jsonUsedAddress struct {
 		Address     string              `json:"address"`
 		AddressID   string              `json:"addressID"`
-		ScriptType  *signing.ScriptType `json:"scriptType"`
 		AddressType btc.UsedAddressType `json:"addressType"`
 		LastUsed    *string             `json:"lastUsed"`
 	}
@@ -632,7 +631,6 @@ func (handlers *Handlers) getUsedAddresses(*http.Request) (interface{}, error) {
 		result[i] = jsonUsedAddress{
 			Address:     addr.Address,
 			AddressID:   addr.AddressID,
-			ScriptType:  addr.ScriptType,
 			AddressType: addr.AddressType,
 			LastUsed:    lastUsed,
 		}

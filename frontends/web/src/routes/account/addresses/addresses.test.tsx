@@ -47,7 +47,6 @@ const mockAccount: accountApi.TAccount = {
 const receiveAddress: accountApi.TUsedAddress = {
   address: 'bc1qreceiveusedaddress',
   addressID: 'receive-address-id',
-  scriptType: 'p2wpkh',
   addressType: 'receive',
   lastUsed: '2025-01-12T10:00:00Z',
 };
@@ -55,7 +54,6 @@ const receiveAddress: accountApi.TUsedAddress = {
 const changeAddress: accountApi.TUsedAddress = {
   address: 'bc1qchangeusedaddress',
   addressID: 'change-address-id',
-  scriptType: 'p2wpkh-p2sh',
   addressType: 'change',
   lastUsed: null,
 };

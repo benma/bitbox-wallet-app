@@ -469,7 +469,6 @@ export const signAddress = (format: ScriptType | '', msg: string, code: AccountC
 export type TUsedAddress = {
   address: string;
   addressID: string;
-  scriptType: ScriptType | null;
   addressType: 'receive' | 'change';
   lastUsed: string | null;
 };

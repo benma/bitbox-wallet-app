@@ -330,7 +330,6 @@ func TestGetUsedAddressesOnlyUsedScriptTypesAreReturned(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, usedAddresses, 1)
 	require.Equal(t, firstScriptAddress.ID(), usedAddresses[0].AddressID)
-	require.Equal(t, signing.ScriptTypeP2WPKH, *usedAddresses[0].ScriptType)
 	require.Equal(t, UsedAddressTypeReceive, usedAddresses[0].AddressType)
 	require.NotNil(t, usedAddresses[0].LastUsed)
 	require.Equal(t, confirmedAt, *usedAddresses[0].LastUsed)
@@ -393,12 +392,10 @@ func TestGetUsedAddressesMixedScriptTypes(t *testing.T) {
 
 	firstResult, ok := usedAddressesByID[firstScriptAddress.ID()]
 	require.True(t, ok)
-	require.Equal(t, signing.ScriptTypeP2WPKH, *firstResult.ScriptType)
 	require.Equal(t, UsedAddressTypeReceive, firstResult.AddressType)
 
 	secondResult, ok := usedAddressesByID[secondScriptAddress.ID()]
 	require.True(t, ok)
-	require.Equal(t, signing.ScriptTypeP2WPKHP2SH, *secondResult.ScriptType)
 	require.Equal(t, UsedAddressTypeChange, secondResult.AddressType)
 	require.NotNil(t, secondResult.LastUsed)
 	require.Equal(t, secondTimestamp, *secondResult.LastUsed)

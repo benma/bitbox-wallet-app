@@ -19,7 +19,6 @@ import { useAddressVerification } from './use-address-verification';
 const mockUsedAddress: accountApi.TUsedAddress = {
   address: 'bc1qtest',
   addressID: 'addr-1',
-  scriptType: 'p2wpkh',
   addressType: 'receive',
   lastUsed: '2025-01-12T10:00:00Z',
 };

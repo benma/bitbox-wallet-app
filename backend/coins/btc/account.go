@@ -765,7 +765,6 @@ func (account *Account) GetUnusedReceiveAddresses() ([]accounts.AddressList, err
 type UsedAddress struct {
 	Address     string
 	AddressID   string
-	ScriptType  *signing.ScriptType
 	AddressType UsedAddressType
 	LastUsed    *time.Time
 }
@@ -865,12 +864,10 @@ func (account *Account) GetUsedAddresses() ([]UsedAddress, error) {
 	}
 	sortableList := make([]sortable, 0, len(addressMap))
 	for _, info := range addressMap {
-		scriptType := info.address.AccountConfiguration.ScriptType()
 		sortableList = append(sortableList, sortable{
 			addr: UsedAddress{
 				Address:     info.address.EncodeForHumans(),
 				AddressID:   info.address.ID(),
-				ScriptType:  &scriptType,
 				AddressType: info.addressType,
 				LastUsed:    info.lastUsed,
 			},
