@@ -796,14 +796,11 @@ func (account *Account) GetUsedAddresses() ([]UsedAddress, error) {
 		return nil, accounts.ErrSyncInProgress
 	}
 
-	// Track address usage with most recent usage metadata.
-	type addressInfo struct {
-		address        *addresses.AccountAddress
-		addressType    UsedAddressType
-		lastUsed       *time.Time
+	type sortableUsedAddress struct {
+		addr           UsedAddress
 		lastUsedHeight int
 	}
-	addressMap := make(map[string]*addressInfo)
+	usedAddressesByID := make(map[string]*sortableUsedAddress)
 
 	_, err := transactions.DBView(account.db, func(dbTx transactions.DBTxInterface) (struct{}, error) {
 		txHashes, err := dbTx.Transactions()
@@ -827,22 +824,25 @@ func (account *Account) GetUsedAddresses() ([]UsedAddress, error) {
 					continue
 				}
 				addressID := addr.ID()
-				if _, exists := addressMap[addressID]; !exists {
-					addressMap[addressID] = &addressInfo{
-						address:     addr,
-						addressType: addressType,
+				if _, exists := usedAddressesByID[addressID]; !exists {
+					usedAddressesByID[addressID] = &sortableUsedAddress{
+						addr: UsedAddress{
+							Address:     addr.EncodeForHumans(),
+							AddressID:   addressID,
+							AddressType: addressType,
+						},
 					}
 				}
 				usedAddressIDsInTx[addressID] = true
 			}
 
 			for addressID := range usedAddressIDsInTx {
-				info := addressMap[addressID]
+				info := usedAddressesByID[addressID]
 
 				if txInfo.HeaderTimestamp != nil &&
-					(info.lastUsed == nil || txInfo.HeaderTimestamp.After(*info.lastUsed)) {
+					(info.addr.LastUsed == nil || txInfo.HeaderTimestamp.After(*info.addr.LastUsed)) {
 					copyTimestamp := *txInfo.HeaderTimestamp
-					info.lastUsed = &copyTimestamp
+					info.addr.LastUsed = &copyTimestamp
 				}
 				if txInfo.Height > info.lastUsedHeight {
 					info.lastUsedHeight = txInfo.Height
@@ -856,37 +856,22 @@ func (account *Account) GetUsedAddresses() ([]UsedAddress, error) {
 		return nil, err
 	}
 
-	// Convert to slice with metadata for sorting.
-	type sortable struct {
-		addr           UsedAddress
-		lastUsed       *time.Time
-		lastUsedHeight int
-	}
-	sortableList := make([]sortable, 0, len(addressMap))
-	for _, info := range addressMap {
-		sortableList = append(sortableList, sortable{
-			addr: UsedAddress{
-				Address:     info.address.EncodeForHumans(),
-				AddressID:   info.address.ID(),
-				AddressType: info.addressType,
-				LastUsed:    info.lastUsed,
-			},
-			lastUsed:       info.lastUsed,
-			lastUsedHeight: info.lastUsedHeight,
-		})
+	sortableList := make([]sortableUsedAddress, 0, len(usedAddressesByID))
+	for _, info := range usedAddressesByID {
+		sortableList = append(sortableList, *info)
 	}
 
 	// Sort by timestamp first, then by block height as fallback.
 	sort.Slice(sortableList, func(i, j int) bool {
 		left, right := sortableList[i], sortableList[j]
 		switch {
-		case left.lastUsed != nil && right.lastUsed != nil:
-			if !left.lastUsed.Equal(*right.lastUsed) {
-				return left.lastUsed.After(*right.lastUsed)
+		case left.addr.LastUsed != nil && right.addr.LastUsed != nil:
+			if !left.addr.LastUsed.Equal(*right.addr.LastUsed) {
+				return left.addr.LastUsed.After(*right.addr.LastUsed)
 			}
-		case left.lastUsed != nil:
+		case left.addr.LastUsed != nil:
 			return true
-		case right.lastUsed != nil:
+		case right.addr.LastUsed != nil:
 			return false
 		}
 		if left.lastUsedHeight != right.lastUsedHeight {
