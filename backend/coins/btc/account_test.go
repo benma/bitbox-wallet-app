@@ -383,21 +383,75 @@ func TestGetUsedAddressesMixedScriptTypes(t *testing.T) {
 	usedAddresses, err := account.GetUsedAddresses()
 	require.NoError(t, err)
 	require.Len(t, usedAddresses, 2)
+	require.Equal(t, secondScriptAddress.ID(), usedAddresses[0].AddressID)
+	require.Equal(t, firstScriptAddress.ID(), usedAddresses[1].AddressID)
 
-	firstByID := map[string]UsedAddress{}
+	usedAddressesByID := map[string]UsedAddress{}
 	for _, addr := range usedAddresses {
-		firstByID[addr.AddressID] = addr
+		usedAddressesByID[addr.AddressID] = addr
 	}
 
-	firstResult, ok := firstByID[firstScriptAddress.ID()]
+	firstResult, ok := usedAddressesByID[firstScriptAddress.ID()]
 	require.True(t, ok)
 	require.Equal(t, signing.ScriptTypeP2WPKH, *firstResult.ScriptType)
 	require.Equal(t, UsedAddressTypeReceive, firstResult.AddressType)
 
-	secondResult, ok := firstByID[secondScriptAddress.ID()]
+	secondResult, ok := usedAddressesByID[secondScriptAddress.ID()]
 	require.True(t, ok)
 	require.Equal(t, signing.ScriptTypeP2WPKHP2SH, *secondResult.ScriptType)
 	require.Equal(t, UsedAddressTypeChange, secondResult.AddressType)
 	require.NotNil(t, secondResult.LastUsed)
 	require.Equal(t, secondTimestamp, *secondResult.LastUsed)
+}
+
+func TestGetUsedAddressesSortsByHeightWhenTimestampMissing(t *testing.T) {
+	account := mockUnifiedAccount(t)
+
+	firstUnusedReceive, err := account.subaccounts[0].receiveAddresses.GetUnused()
+	require.NoError(t, err)
+	secondUnusedReceive, err := account.subaccounts[1].receiveAddresses.GetUnused()
+	require.NoError(t, err)
+
+	firstAddress := firstUnusedReceive[0]
+	secondAddress := secondUnusedReceive[0]
+
+	putWalletTransaction(
+		t,
+		account,
+		txWithOutputs(&wire.TxOut{
+			Value:    1000,
+			PkScript: firstAddress.PubkeyScript(),
+		}),
+		90,
+		nil,
+		firstAddress.PubkeyScriptHashHex(),
+	)
+	putWalletTransaction(
+		t,
+		account,
+		txWithOutputs(&wire.TxOut{
+			Value:    2000,
+			PkScript: secondAddress.PubkeyScript(),
+		}),
+		120,
+		nil,
+		secondAddress.PubkeyScriptHashHex(),
+	)
+
+	usedAddresses, err := account.GetUsedAddresses()
+	require.NoError(t, err)
+	require.Len(t, usedAddresses, 2)
+	require.Equal(t, secondAddress.ID(), usedAddresses[0].AddressID)
+	require.Equal(t, firstAddress.ID(), usedAddresses[1].AddressID)
+	require.Nil(t, usedAddresses[0].LastUsed)
+	require.Nil(t, usedAddresses[1].LastUsed)
+}
+
+func TestGetUsedAddressesFatalError(t *testing.T) {
+	account := mockUnifiedAccount(t)
+	account.fatalError.Store(true)
+
+	usedAddresses, err := account.GetUsedAddresses()
+	require.Nil(t, usedAddresses)
+	require.EqualError(t, err, "can't call GetUsedAddresses() after a fatal error")
 }

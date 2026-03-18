@@ -790,11 +790,14 @@ func (account *Account) GetUsedAddresses() ([]UsedAddress, error) {
 	if !account.isInitialized() {
 		return nil, errp.New("uninitialized")
 	}
+	if account.fatalError.Load() {
+		return nil, errp.New("can't call GetUsedAddresses() after a fatal error")
+	}
 	if !account.Synced() {
 		return nil, accounts.ErrSyncInProgress
 	}
 
-	// Track address usage with count and most recent usage.
+	// Track address usage with most recent usage metadata.
 	type addressInfo struct {
 		address        *addresses.AccountAddress
 		addressType    UsedAddressType
