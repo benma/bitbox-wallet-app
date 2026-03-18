@@ -290,7 +290,7 @@ func putWalletTransaction(
 	require.NoError(t, err)
 }
 
-func TestGetUsedAddressesOnlyUsedScriptTypesAreReturned(t *testing.T) {
+func TestGetUsedAddressesIgnoresUnconfirmedTransactions(t *testing.T) {
 	account := mockUnifiedAccount(t)
 
 	firstScriptUnusedReceive, err := account.subaccounts[0].receiveAddresses.GetUnused()
