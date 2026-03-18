@@ -16,7 +16,7 @@ import { truncateMiddle } from '@/utils/truncate';
 import style from './addresses.module.css';
 
 type TProps = {
-  accountName?: string;
+  accountName: string;
   isLoading: boolean;
   error: string | null;
   isEmpty: boolean;
