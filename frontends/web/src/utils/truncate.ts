@@ -6,8 +6,11 @@ export const truncateMiddle = (
   suffixLength: number,
   separator = '...',
 ): string => {
-  if (!value || value.length <= prefixLength + suffixLength) {
-    return value ?? '';
+  if (prefixLength < 0 || suffixLength < 0) {
+    throw new Error('prefixLength and suffixLength must be non-negative');
+  }
+  if (value.length <= prefixLength + suffixLength) {
+    return value;
   }
   return `${value.slice(0, prefixLength)}${separator}${value.slice(-suffixLength)}`;
 };
