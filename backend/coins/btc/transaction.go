@@ -224,7 +224,7 @@ func (account *Account) newTx(args *accounts.TxProposalArgs) (
 // AddressByID returns the address in the account with the given address ID. Returns nil if the
 // address does not exist in the account.
 func (account *Account) AddressByID(addressID addresses.AddressID) *addresses.AccountAddress {
-	address, _ := account.lookupAddressByScriptHashHex(addressID)
+	address, _ := account.lookupAddressByID(addressID)
 	return address
 }
 

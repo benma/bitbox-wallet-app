@@ -769,14 +769,14 @@ type UsedAddress struct {
 	LastUsed    *time.Time
 }
 
-func (account *Account) lookupAddressByScriptHashHex(
-	scriptHashHex blockchain.ScriptHashHex,
+func (account *Account) lookupAddressByID(
+	addressID addresses.AddressID,
 ) (*addresses.AccountAddress, UsedAddressType) {
 	for _, subacc := range account.subaccounts {
-		if addr := subacc.receiveAddresses.LookupByAddressID(scriptHashHex); addr != nil {
+		if addr := subacc.receiveAddresses.LookupByAddressID(addressID); addr != nil {
 			return addr, UsedAddressTypeReceive
 		}
-		if addr := subacc.changeAddresses.LookupByAddressID(scriptHashHex); addr != nil {
+		if addr := subacc.changeAddresses.LookupByAddressID(addressID); addr != nil {
 			return addr, UsedAddressTypeChange
 		}
 	}
@@ -800,7 +800,7 @@ func (account *Account) GetUsedAddresses() ([]UsedAddress, error) {
 		addr           UsedAddress
 		lastUsedHeight int
 	}
-	usedAddressesByID := make(map[string]*sortableUsedAddress)
+	usedAddressesByID := make(map[addresses.AddressID]*sortableUsedAddress)
 
 	_, err := transactions.DBView(account.db, func(dbTx transactions.DBTxInterface) (struct{}, error) {
 		txHashes, err := dbTx.Transactions()
@@ -818,16 +818,16 @@ func (account *Account) GetUsedAddresses() ([]UsedAddress, error) {
 			}
 
 			for scriptHashHex := range txInfo.Addresses {
-				addr, addressType := account.lookupAddressByScriptHashHex(blockchain.ScriptHashHex(scriptHashHex))
+				addressID := addresses.AddressID(scriptHashHex)
+				addr, addressType := account.lookupAddressByID(addressID)
 				if addr == nil {
 					continue
 				}
-				addressID := addr.ID()
 				if _, exists := usedAddressesByID[addressID]; !exists {
 					usedAddressesByID[addressID] = &sortableUsedAddress{
 						addr: UsedAddress{
 							Address:     addr.EncodeForHumans(),
-							AddressID:   addressID,
+							AddressID:   addr.ID(),
 							AddressType: addressType,
 						},
 					}
@@ -898,8 +898,7 @@ func (account *Account) VerifyAddress(addressID string) (bool, error) {
 		return false, err
 	}
 
-	scriptHashHex := blockchain.ScriptHashHex(addressID)
-	address, addressType := account.lookupAddressByScriptHashHex(scriptHashHex)
+	address, addressType := account.lookupAddressByID(addresses.AddressID(addressID))
 	if address == nil || addressType != UsedAddressTypeReceive {
 		return false, errp.New("unknown address not found")
 	}
@@ -1033,7 +1032,7 @@ func (account *Account) VerifyExtendedPublicKey(signingConfigIndex int) (bool, e
 // IsChange returns true if there is an address corresponding to the provided address ID in our
 // accounts change address chain. It returns false if no address can be found.
 func (account *Account) IsChange(addressID addresses.AddressID) bool {
-	_, addressType := account.lookupAddressByScriptHashHex(addressID)
+	_, addressType := account.lookupAddressByID(addressID)
 	return addressType == UsedAddressTypeChange
 }
 
