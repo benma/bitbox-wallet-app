@@ -105,7 +105,6 @@
     "skipVerifyTitle": "Skip device verification?",
     "skipVerifyWarning": "Warning",
     "title": "Used addresses",
-    "unknown": "Unknown",
     "unverifiedAddressWarning": "This address has not been verified on the device.",
     "verifyConnectFailed": "Could not connect to the selected device.",
     "verifyFailed": "Address verification failed."
@@ -965,7 +964,8 @@
     "send": "Send",
     "sent": "Sent",
     "spend_bitcoin": "Spend bitcoin",
-    "spend_crypto": "Spend crypto"
+    "spend_crypto": "Spend crypto",
+    "unknown": "Unknown"
   },
   "genericError": "An error occurred. If you notice any issues, please restart the application.",
   "goal": {

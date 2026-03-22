@@ -51,7 +51,7 @@ export const AddressList = ({
   const isScrollable = useIsScrollable(scrollableRef, [filteredAddresses]);
 
   const formatDate = (lastUsed: string | null) =>
-    lastUsed ? parseTimeShort(lastUsed, i18n.language) : t('addresses.unknown');
+    lastUsed ? parseTimeShort(lastUsed, i18n.language) : t('generic.unknown');
 
   return (
     <div>
