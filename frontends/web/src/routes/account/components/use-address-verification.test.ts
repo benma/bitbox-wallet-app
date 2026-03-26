@@ -31,11 +31,17 @@ const defaultParams = {
   returnToList: vi.fn(),
 };
 
-const wrapper = ({ children }: { children: React.ReactNode }) => (
-  React.createElement(MemoryRouter, {
-    initialEntries: ['/account/btc-acct/addresses/addr-1/verify'],
-  }, children)
+const COPY_ONLY_PARAM = 'copyOnly';
+
+const createWrapper = (initialEntry = '/account/btc-acct/addresses/addr-1/verify') => (
+  ({ children }: { children: React.ReactNode }) => (
+    React.createElement(MemoryRouter, {
+      initialEntries: [initialEntry],
+    }, children)
+  )
 );
+
+const wrapper = createWrapper();
 
 describe('routes/account/components/use-address-verification', () => {
   beforeEach(() => {
@@ -161,6 +167,21 @@ describe('routes/account/components/use-address-verification', () => {
     expect(result.current.verifyState).toBe('skipped');
   });
 
+  it('goes straight to skipped state in copy-only mode without verifying', async () => {
+    const { result } = renderHook(
+      () => useAddressVerification({ ...defaultParams, isVerifyView: true }),
+      {
+        wrapper: createWrapper(`/account/btc-acct/addresses/addr-1/verify?${COPY_ONLY_PARAM}=1`),
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.verifyState).toBe('skipped');
+    });
+    expect(verifyAddressWithDevice).not.toHaveBeenCalled();
+    expect(handleVerifyAddressWithDeviceResult).not.toHaveBeenCalled();
+  });
+
   it('startVerifyFlow navigates to verify route', () => {
     const { result } = renderHook(
       () => useAddressVerification({ ...defaultParams, isVerifyView: false }),
@@ -176,5 +197,19 @@ describe('routes/account/components/use-address-verification', () => {
     expect(result.current.verifyError).toBeNull();
     // Navigation is handled internally by react-router; we verify it doesn't throw
     // and that the state is properly reset for the new flow.
+  });
+
+  it('startCopyOnlyFlow resets state for the copy-only route', () => {
+    const { result } = renderHook(
+      () => useAddressVerification({ ...defaultParams, isVerifyView: false }),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.startCopyOnlyFlow('addr-1');
+    });
+
+    expect(result.current.verifyState).toBe('idle');
+    expect(result.current.verifyError).toBeNull();
   });
 });

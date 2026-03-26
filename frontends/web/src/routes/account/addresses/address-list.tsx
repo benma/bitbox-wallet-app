@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { useRef } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { TUsedAddress } from '@/api/account';
 import { useIsScrollable } from '@/hooks/scrollable';
 import { parseTimeShort } from '@/utils/date';
@@ -9,7 +10,7 @@ import { Spinner } from '@/components/spinner/Spinner';
 import { Message } from '@/components/message/message';
 import { Button, SearchInput } from '@/components/forms';
 import { BackButton } from '@/components/backbutton/backbutton';
-import { AddressRow, AddressRowAccordion } from './address-row';
+import { AddressRowAccordion } from './address-row';
 import { AddressTypeFilter } from './address-type-filter';
 import { AddressActions } from './address-actions';
 import { truncateMiddle } from '@/utils/truncate';
@@ -23,11 +24,12 @@ type TProps = {
   searchTerm: string;
   onSearchChange: (term: string) => void;
   addressTypeFilter: 'receive' | 'change';
+  receivePath: string;
   onAddressTypeFilterChange: (value: 'receive' | 'change') => void;
   filteredAddresses: TUsedAddress[];
   expandedAddressID: string | null;
   onToggleExpand: (addressID: string) => void;
-  onStartVerify: (addressID: string) => void;
+  onStartCopy: (address: TUsedAddress) => void;
   onRetryLoad: () => void;
 };
 
@@ -39,11 +41,12 @@ export const AddressList = ({
   searchTerm,
   onSearchChange,
   addressTypeFilter,
+  receivePath,
   onAddressTypeFilterChange,
   filteredAddresses,
   expandedAddressID,
   onToggleExpand,
-  onStartVerify,
+  onStartCopy,
   onRetryLoad,
 }: TProps) => {
   const { t, i18n } = useTranslation();
@@ -86,6 +89,16 @@ export const AddressList = ({
           </div>
 
           <AddressTypeFilter value={addressTypeFilter} onChange={onAddressTypeFilterChange} />
+          {addressTypeFilter === 'change' && (
+            <Message type="info">
+              <Trans
+                i18nKey="addresses.changeCopyBody"
+                components={{
+                  receiveLink: <Link className={style.inlineLink} to={receivePath} />,
+                }}
+              />
+            </Message>
+          )}
 
           {filteredAddresses.length === 0 ? (
             <p className={style.empty}>{t('addresses.emptyFiltered')}</p>
@@ -100,27 +113,18 @@ export const AddressList = ({
                   {filteredAddresses.map(address => {
                     const isExpanded = expandedAddressID === address.addressID;
                     const truncatedAddressMobile = truncateMiddle(address.address, 10, 10);
-                    const isChangeAddress = address.addressType === 'change';
 
                     return (
                       <div key={address.addressID} className={style.addressItem}>
-                        {isChangeAddress ? (
-                          <AddressRow
-                            address={address.address}
-                            truncatedAddress={truncatedAddressMobile}
-                            formattedDate={formatDate(address.lastUsed)}
-                          />
-                        ) : (
-                          <AddressRowAccordion
-                            address={address.address}
-                            truncatedAddress={truncatedAddressMobile}
-                            formattedDate={formatDate(address.lastUsed)}
-                            isExpanded={isExpanded}
-                            onToggle={() => onToggleExpand(address.addressID)}
-                          >
-                            <AddressActions address={address} onVerify={onStartVerify} />
-                          </AddressRowAccordion>
-                        )}
+                        <AddressRowAccordion
+                          address={address.address}
+                          truncatedAddress={truncatedAddressMobile}
+                          formattedDate={formatDate(address.lastUsed)}
+                          isExpanded={isExpanded}
+                          onToggle={() => onToggleExpand(address.addressID)}
+                        >
+                          <AddressActions address={address} onCopy={onStartCopy} />
+                        </AddressRowAccordion>
                       </div>
                     );
                   })}

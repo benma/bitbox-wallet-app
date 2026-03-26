@@ -212,6 +212,11 @@
   margin: 0 0 var(--space-default);
 }
 
+.inlineLink {
+  color: var(--color-blue);
+  text-decoration: underline;
+}
+
 .warningRow {
   align-items: center;
   color: var(--color-error);

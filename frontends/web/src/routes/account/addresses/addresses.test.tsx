@@ -126,6 +126,8 @@ describe('routes/account/addresses', () => {
 
     await user.click(screen.getByRole('button', { name: 'Change addresses' }));
     await screen.findByTitle(changeAddress.address);
+    expect(screen.getByText(/Do not use a change address to receive coins\./)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'here' })).toHaveAttribute('href', '/account/btc-account/receive');
 
     await user.type(screen.getByPlaceholderText('Search address'), 'does-not-match-anything');
     await screen.findByText('No addresses match your filters.');
@@ -135,8 +137,37 @@ describe('routes/account/addresses', () => {
     await user.click(screen.getByTitle(changeAddress.address));
 
     expect(screen.getByPlaceholderText('Search address')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Copy Address' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Copy Address' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Verify address on device' })).not.toBeInTheDocument();
+  });
+
+  it('shows a warning and receive-page link before copying a change address', async () => {
+    const connectSpy = vi.spyOn(keystoresApi, 'connectKeystore').mockResolvedValue({ success: true });
+    const verifyAddressSpy = vi.spyOn(accountApi, 'verifyAddress').mockResolvedValue(true);
+    const user = userEvent.setup();
+
+    renderWithRoute('/account/btc-account/addresses');
+
+    await screen.findByTitle(receiveAddress.address);
+    await user.click(screen.getByRole('button', { name: 'Change addresses' }));
+    await user.click(await screen.findByTitle(changeAddress.address));
+    await user.click(screen.getByRole('button', { name: 'Copy Address' }));
+
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
+    const receiveLinks = screen.getAllByRole('link', { name: 'here' });
+    expect(receiveLinks).toHaveLength(2);
+    receiveLinks.forEach(receiveLink => {
+      expect(receiveLink).toHaveAttribute('href', '/account/btc-account/receive');
+    });
+    expect(connectSpy).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+
+    const copyAddressInput = await screen.findByTestId('receive-address') as HTMLTextAreaElement;
+    expect(copyAddressInput.value).toBe(changeAddress.address);
+    expect(screen.queryByText(/This address has not been verified on the device\./)).not.toBeInTheDocument();
+    expect(connectSpy).not.toHaveBeenCalled();
+    expect(verifyAddressSpy).not.toHaveBeenCalled();
   });
 
   it('shows insecure verify warning and skip path without calling verify API', async () => {
@@ -155,6 +186,7 @@ describe('routes/account/addresses', () => {
     const addressElements = await screen.findAllByText('Address');
     expect(addressElements.length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText('Please verify that the following address matches the one displayed on your device.')).not.toBeInTheDocument();
+    expect(screen.getByText(/This address has not been verified on the device\./)).toBeInTheDocument();
     expect(verifyAddressSpy).not.toHaveBeenCalled();
   });
 

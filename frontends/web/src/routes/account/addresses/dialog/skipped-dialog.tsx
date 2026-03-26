@@ -13,6 +13,7 @@ export const SkippedDialog = ({ selectedAddress, coinCode, onClose }: Pick<TDial
   if (!selectedAddress) {
     return <AddressNotFoundDialog onClose={() => onClose()} />;
   }
+  const showUnverifiedWarning = selectedAddress.addressType !== 'change';
   return (
     <Dialog
       open
@@ -29,11 +30,13 @@ export const SkippedDialog = ({ selectedAddress, coinCode, onClose }: Pick<TDial
           qrWrapClassName={style.qrWrap}
           qrSize={180}
         />
-        <div className={style.skipFinalWarning}>
-          <p className={style.skipFinalWarningText}>
-            {t('addresses.skipVerifyWarning')}. {t('addresses.unverifiedAddressWarning')}
-          </p>
-        </div>
+        {showUnverifiedWarning && (
+          <div className={style.skipFinalWarning}>
+            <p className={style.skipFinalWarningText}>
+              {t('addresses.skipVerifyWarning')}. {t('addresses.unverifiedAddressWarning')}
+            </p>
+          </div>
+        )}
       </div>
     </Dialog>
   );

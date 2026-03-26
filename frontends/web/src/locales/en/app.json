@@ -81,6 +81,7 @@
     "title": "Add account"
   },
   "addresses": {
+    "changeCopyBody": "Do not use a change address to receive coins. To receive coins, click <receiveLink>here</receiveLink>.",
     "columnAddress": "Address",
     "columnLastUsed": "Last used",
     "detail": {

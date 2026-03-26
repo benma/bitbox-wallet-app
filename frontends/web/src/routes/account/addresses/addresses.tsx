@@ -15,6 +15,7 @@ import { MobileHeader } from '@/routes/settings/components/mobile-header';
 import { findAccount } from '@/routes/account/utils';
 import { useAddressVerification } from '../components/use-address-verification';
 import { AddressList } from './address-list';
+import { ChangeCopyWarningDialog } from './dialog/change-copy-warning-dialog';
 import { VerifyAddressDialog } from './verify-address-dialog';
 
 type TProps = {
@@ -39,9 +40,11 @@ export const Addresses = ({ code, accounts, devices }: TProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [addressTypeFilter, setAddressTypeFilter] = useState<'receive' | 'change'>('receive');
   const [expandedAddressID, setExpandedAddressID] = useState<string | null>(addressID || null);
+  const [changeCopyWarningAddress, setChangeCopyWarningAddress] = useState<accountApi.TUsedAddress | null>(null);
 
   const isVerifyView = !!addressID && location.pathname.endsWith('/verify');
   const view: TView = isVerifyView ? 'verify' : 'list';
+  const receivePath = `/account/${code}/receive`;
 
   const isLoading = usedAddressesResponse === undefined;
   const usedAddressesError = useMemo(() => {
@@ -101,10 +104,31 @@ export const Addresses = ({ code, accounts, devices }: TProps) => {
     isVerifyView,
     returnToList,
   });
+  const { startCopyOnlyFlow, startVerifyFlow } = verification;
 
   const handleToggleExpand = useCallback((id: string) => {
     setExpandedAddressID(prev => prev === id ? null : id);
   }, []);
+
+  const handleStartCopy = useCallback((address: accountApi.TUsedAddress) => {
+    if (address.addressType === 'change') {
+      setChangeCopyWarningAddress(address);
+      return;
+    }
+    startVerifyFlow(address.addressID);
+  }, [startVerifyFlow]);
+
+  const handleCloseChangeCopyWarning = useCallback(() => {
+    setChangeCopyWarningAddress(null);
+  }, []);
+
+  const handleConfirmChangeCopy = useCallback(() => {
+    if (!changeCopyWarningAddress) {
+      return;
+    }
+    startCopyOnlyFlow(changeCopyWarningAddress.addressID);
+    setChangeCopyWarningAddress(null);
+  }, [changeCopyWarningAddress, startCopyOnlyFlow]);
 
   if (!account) {
     return null;
@@ -138,13 +162,22 @@ export const Addresses = ({ code, accounts, devices }: TProps) => {
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             addressTypeFilter={addressTypeFilter}
+            receivePath={receivePath}
             onAddressTypeFilterChange={setAddressTypeFilter}
             filteredAddresses={filteredAddresses}
             expandedAddressID={currentExpandedAddressID}
             onToggleExpand={handleToggleExpand}
-            onStartVerify={verification.startVerifyFlow}
+            onStartCopy={handleStartCopy}
             onRetryLoad={() => setUsedAddressesLoadAttempt(prev => prev + 1)}
           />
+          {changeCopyWarningAddress && (
+            <ChangeCopyWarningDialog
+              code={code}
+              selectedAddress={changeCopyWarningAddress}
+              onContinue={handleConfirmChangeCopy}
+              onClose={handleCloseChangeCopyWarning}
+            />
+          )}
           {view === 'verify' && (
             <VerifyAddressDialog
               verification={verification}
