@@ -33,6 +33,7 @@ type Device struct {
 	deviceID    string
 	productName string
 	log         *logrus.Entry
+	keystore    *keystore
 
 	observable.Implementation
 }
@@ -72,6 +73,10 @@ func NewDevice(
 		productName: productName,
 		log:         log,
 	}
+	device.keystore = &keystore{
+		device: device,
+		log:    device.log,
+	}
 	device.Device.SetOnEvent(func(ev firmware.Event, meta interface{}) {
 		switch ev {
 		case firmware.EventStatusChanged:
@@ -91,6 +96,7 @@ func NewDevice(
 		case firmware.EventStatusChanged:
 			switch device.Device.Status() {
 			case firmware.StatusInitialized:
+				device.keystore.clearRootFingerprintCache()
 				device.Notify(observable.Event{
 					Subject: string(deviceevent.EventKeystoreAvailable),
 					Action:  action.Replace,
@@ -136,14 +142,24 @@ func (device *Device) Keystore() keystoreInterface.Keystore {
 	if device.Status() != firmware.StatusInitialized {
 		return nil
 	}
-	return &keystore{
-		device: device,
-		log:    device.log,
-	}
+	return device.keystore
 }
 
 // SetOnEvent implements device.Device.
 func (device *Device) SetOnEvent(onEvent func(deviceevent.Event, interface{})) {
+}
+
+// SetDeviceName updates the device name and notifies keystore observers.
+func (device *Device) SetDeviceName(deviceName string) error {
+	if err := device.Device.SetDeviceName(deviceName); err != nil {
+		return err
+	}
+	device.keystore.Notify(observable.Event{
+		Subject: string(keystoreInterface.EventNameChanged),
+		Action:  action.Replace,
+		Object:  deviceName,
+	})
+	return nil
 }
 
 // Reset factory resets the device.
