@@ -131,6 +131,11 @@ func TestAccounts(t *testing.T) {
 }
 
 func TestSortAccounts(t *testing.T) {
+	const (
+		alphaWalletName = "Alpha"
+		betaWalletName  = "Beta"
+	)
+
 	xpub, err := hdkeychain.NewMaster(make([]byte, 32), &chaincfg.TestNet3Params)
 	require.NoError(t, err)
 	xpub, err = xpub.Neuter()
@@ -169,11 +174,11 @@ func TestSortAccounts(t *testing.T) {
 	backend := newBackend(t, testnetDisabled, regtestDisabled)
 	require.NoError(t, backend.config.ModifyAccountsConfig(func(accountsConfig *config.AccountsConfig) error {
 		keystore1 := accountsConfig.GetOrAddKeystore(rootFingerprint1)
-		keystore1.Name = "Beta"
+		keystore1.Name = betaWalletName
 		keystore2 := accountsConfig.GetOrAddKeystore(rootFingerprint2)
-		keystore2.Name = "Alpha"
+		keystore2.Name = alphaWalletName
 		keystore3 := accountsConfig.GetOrAddKeystore(rootFingerprint3)
-		keystore3.Name = "Beta"
+		keystore3.Name = betaWalletName
 		return nil
 	}))
 	unlockFN := backend.accountsAndKeystoreLock.Lock()
