@@ -218,6 +218,8 @@ type Backend struct {
 	accounts                AccountsList
 	// keystore is nil if no keystore is connected.
 	keystore keystore.Keystore
+	// Called to remove the current keystore observer, if any.
+	unobserveKeystore func()
 
 	connectKeystore connectKeystore
 
@@ -726,17 +728,18 @@ func (backend *Backend) Keystore() keystore.Keystore {
 
 // registerKeystore registers the given keystore at this backend.
 // if another keystore is already registered, it will be replaced.
-func (backend *Backend) registerKeystore(keystore keystore.Keystore) {
+func (backend *Backend) registerKeystore(ks keystore.Keystore) {
 	defer backend.accountsAndKeystoreLock.Lock()()
 	// Only for logging, if there is an error we continue anyway.
-	fingerprint, err := keystore.RootFingerprint()
+	fingerprint, err := ks.RootFingerprint()
 	if err != nil {
 		backend.log.WithError(err).Error("could not retrieve keystore fingerprint")
 		return
 	}
 	log := backend.log.WithField("rootFingerprint", hex.EncodeToString(fingerprint))
 	log.Info("registering keystore")
-	backend.keystore = keystore
+	backend.observeKeystore(ks)
+	backend.keystore = ks
 	backend.Notify(observable.Event{
 		Subject: "keystores",
 		Action:  action.Reload,
@@ -747,7 +750,7 @@ func (backend *Backend) registerKeystore(keystore keystore.Keystore) {
 	}
 
 	persistKeystore := func(accountsConfig *config.AccountsConfig) error {
-		keystoreName, err := keystore.Name()
+		keystoreName, err := ks.Name()
 		if err != nil {
 			return errp.WithMessage(err, "could not retrieve keystore name")
 		}
@@ -767,9 +770,9 @@ func (backend *Backend) registerKeystore(keystore keystore.Keystore) {
 		// needed on the persisted accounts.
 		accounts := backend.filterAccounts(accountsConfig, belongsToKeystore)
 		if len(accounts) != 0 {
-			return backend.updatePersistedAccounts(keystore, accounts)
+			return backend.updatePersistedAccounts(ks, accounts)
 		}
-		return backend.persistDefaultAccountConfigs(keystore, accountsConfig)
+		return backend.persistDefaultAccountConfigs(ks, accountsConfig)
 	})
 	if err != nil {
 		log.WithError(err).Error("Could not persist default accounts")
@@ -784,6 +787,31 @@ func (backend *Backend) registerKeystore(keystore keystore.Keystore) {
 	go backend.maybeAddHiddenUnusedAccounts()
 }
 
+func (backend *Backend) observeKeystore(ks keystore.Keystore) {
+	if backend.unobserveKeystore != nil {
+		backend.unobserveKeystore()
+		backend.unobserveKeystore = nil
+	}
+	backend.unobserveKeystore = ks.Observe(func(event observable.Event) {
+		if event.Subject != string(keystore.EventNameChanged) {
+			return
+		}
+		name, ok := event.Object.(string)
+		if !ok {
+			backend.log.WithField("subject", event.Subject).Warn("keystore name change event without name")
+			return
+		}
+		rootFingerprint, err := ks.RootFingerprint()
+		if err != nil {
+			backend.log.WithError(err).Error("could not retrieve keystore fingerprint after name change")
+			return
+		}
+		if err := backend.updateKeystoreName(rootFingerprint, name); err != nil {
+			backend.log.WithError(err).Error("could not persist keystore name after name change")
+		}
+	})
+}
+
 // DeregisterKeystore removes the registered keystore.
 func (backend *Backend) DeregisterKeystore() {
 	defer backend.accountsAndKeystoreLock.Lock()()
@@ -795,6 +823,10 @@ func (backend *Backend) DeregisterKeystore() {
 	// Only for logging, if there is an error we continue anyway.
 	fingerprint, _ := backend.keystore.RootFingerprint()
 	backend.log.WithField("rootFingerprint", hex.EncodeToString(fingerprint)).Info("deregistering keystore")
+	if backend.unobserveKeystore != nil {
+		backend.unobserveKeystore()
+		backend.unobserveKeystore = nil
+	}
 	backend.keystore = nil
 	backend.Notify(observable.Event{
 		Subject: "keystores",
@@ -953,6 +985,10 @@ func (backend *Backend) Close() error {
 	errors := []string{}
 
 	backend.uninitAccounts(true)
+	if backend.unobserveKeystore != nil {
+		backend.unobserveKeystore()
+		backend.unobserveKeystore = nil
+	}
 
 	for _, coin := range backend.coins {
 		if err := coin.Close(); err != nil {
