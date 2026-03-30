@@ -18,6 +18,7 @@
 - Harmonize iOS and Android back swipe/button navigation to only work in expected situations
 - Bitcoin: remove option to receive to wrapped segwit addresses
 - Fix coin control reused-address labels
+- Sort wallets by name first, then by root fingerprint when names match.
 
 ## v4.50.1
 - Fix a bug that would delay showing watch-only accounts.
