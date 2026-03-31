@@ -51,6 +51,12 @@ const (
 	EventNameChanged Event = "nameChanged"
 )
 
+// NameChangedEvent is the payload for EventNameChanged.
+type NameChangedEvent struct {
+	Name            string
+	RootFingerprint []byte
+}
+
 // Keystore supports hardened key derivation according to BIP32 and signing of transactions.
 //
 //go:generate moq -pkg mocks -out mocks/keystore.go . Keystore

@@ -5,6 +5,8 @@
 package bitbox02
 
 import (
+	"slices"
+
 	deviceevent "github.com/BitBoxSwiss/bitbox-wallet-app/backend/devices/device/event"
 	keystoreInterface "github.com/BitBoxSwiss/bitbox-wallet-app/backend/keystore"
 	"github.com/BitBoxSwiss/bitbox-wallet-app/util/logging"
@@ -154,10 +156,17 @@ func (device *Device) SetDeviceName(deviceName string) error {
 	if err := device.Device.SetDeviceName(deviceName); err != nil {
 		return err
 	}
+	rootFingerprint, err := device.keystore.RootFingerprint()
+	if err != nil {
+		return err
+	}
 	device.keystore.Notify(observable.Event{
 		Subject: string(keystoreInterface.EventNameChanged),
 		Action:  action.Replace,
-		Object:  deviceName,
+		Object: keystoreInterface.NameChangedEvent{
+			Name:            deviceName,
+			RootFingerprint: slices.Clone(rootFingerprint),
+		},
 	})
 	return nil
 }

@@ -268,16 +268,16 @@ func TestObserveKeystoreNameChanged(t *testing.T) {
 				keystoreObserver = nil
 			}
 		},
-		RootFingerprintFunc: func() ([]byte, error) {
-			return rootFingerprint1, nil
-		},
 	})
 	require.NotNil(t, keystoreObserver)
 
 	keystoreObserver(observable.Event{
 		Subject: string(keystorepkg.EventNameChanged),
 		Action:  action.Replace,
-		Object:  "Aardvark",
+		Object: keystorepkg.NameChangedEvent{
+			Name:            "Aardvark",
+			RootFingerprint: rootFingerprint1,
+		},
 	})
 
 	keystoreConfig, err := backend.Config().AccountsConfig().LookupKeystore(rootFingerprint1)

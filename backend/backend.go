@@ -796,17 +796,12 @@ func (backend *Backend) observeKeystore(ks keystore.Keystore) {
 		if event.Subject != string(keystore.EventNameChanged) {
 			return
 		}
-		name, ok := event.Object.(string)
+		nameChanged, ok := event.Object.(keystore.NameChangedEvent)
 		if !ok {
-			backend.log.WithField("subject", event.Subject).Warn("keystore name change event without name")
+			backend.log.WithField("subject", event.Subject).Warn("keystore name change event without payload")
 			return
 		}
-		rootFingerprint, err := ks.RootFingerprint()
-		if err != nil {
-			backend.log.WithError(err).Error("could not retrieve keystore fingerprint after name change")
-			return
-		}
-		if err := backend.updateKeystoreName(rootFingerprint, name); err != nil {
+		if err := backend.updateKeystoreName(nameChanged.RootFingerprint, nameChanged.Name); err != nil {
 			backend.log.WithError(err).Error("could not persist keystore name after name change")
 		}
 	})
