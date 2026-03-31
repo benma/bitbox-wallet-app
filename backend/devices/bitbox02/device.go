@@ -96,6 +96,7 @@ func NewDevice(
 		case firmware.EventStatusChanged:
 			switch device.Device.Status() {
 			case firmware.StatusInitialized:
+				device.keystore.clearRootFingerprintCache()
 				device.Notify(observable.Event{
 					Subject: string(deviceevent.EventKeystoreAvailable),
 					Action:  action.Replace,

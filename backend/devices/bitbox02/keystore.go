@@ -36,6 +36,12 @@ type keystore struct {
 	rootFinger   []byte // cached result of RootFingerprint
 }
 
+func (keystore *keystore) clearRootFingerprintCache() {
+	keystore.rootFingerMu.Lock()
+	defer keystore.rootFingerMu.Unlock()
+	keystore.rootFinger = nil
+}
+
 // Type implements keystore.Keystore.
 func (keystore *keystore) Type() keystorePkg.Type {
 	return keystorePkg.TypeHardware
