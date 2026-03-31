@@ -729,16 +729,25 @@ func (backend *Backend) Keystore() keystore.Keystore {
 // registerKeystore registers the given keystore at this backend.
 // if another keystore is already registered, it will be replaced.
 func (backend *Backend) registerKeystore(ks keystore.Keystore) {
-	defer backend.accountsAndKeystoreLock.Lock()()
 	// Only for logging, if there is an error we continue anyway.
 	fingerprint, err := ks.RootFingerprint()
 	if err != nil {
 		backend.log.WithError(err).Error("could not retrieve keystore fingerprint")
 		return
 	}
+	newUnobserveKeystore := backend.observeKeystore(ks)
+	var previousUnobserveKeystore func()
+	unlock := backend.accountsAndKeystoreLock.Lock()
+	defer func() {
+		unlock()
+		if previousUnobserveKeystore != nil {
+			previousUnobserveKeystore()
+		}
+	}()
 	log := backend.log.WithField("rootFingerprint", hex.EncodeToString(fingerprint))
 	log.Info("registering keystore")
-	backend.observeKeystore(ks)
+	previousUnobserveKeystore = backend.unobserveKeystore
+	backend.unobserveKeystore = newUnobserveKeystore
 	backend.keystore = ks
 	backend.Notify(observable.Event{
 		Subject: "keystores",
@@ -787,12 +796,13 @@ func (backend *Backend) registerKeystore(ks keystore.Keystore) {
 	go backend.maybeAddHiddenUnusedAccounts()
 }
 
-func (backend *Backend) observeKeystore(ks keystore.Keystore) {
-	if backend.unobserveKeystore != nil {
-		backend.unobserveKeystore()
-		backend.unobserveKeystore = nil
-	}
-	backend.unobserveKeystore = ks.Observe(func(event observable.Event) {
+func (backend *Backend) isCurrentKeystore(ks keystore.Keystore) bool {
+	defer backend.accountsAndKeystoreLock.RLock()()
+	return backend.keystore == ks
+}
+
+func (backend *Backend) observeKeystore(ks keystore.Keystore) func() {
+	return ks.Observe(func(event observable.Event) {
 		if event.Subject != string(keystore.EventNameChanged) {
 			return
 		}
@@ -801,9 +811,16 @@ func (backend *Backend) observeKeystore(ks keystore.Keystore) {
 			backend.log.WithField("subject", event.Subject).Warn("keystore name change event without name")
 			return
 		}
+		if !backend.isCurrentKeystore(ks) {
+			return
+		}
 		rootFingerprint, err := ks.RootFingerprint()
 		if err != nil {
 			backend.log.WithError(err).Error("could not retrieve keystore fingerprint after name change")
+			return
+		}
+		// The current keystore may have changed while the fingerprint was being resolved.
+		if !backend.isCurrentKeystore(ks) {
 			return
 		}
 		if err := backend.updateKeystoreName(rootFingerprint, name); err != nil {
@@ -814,6 +831,12 @@ func (backend *Backend) observeKeystore(ks keystore.Keystore) {
 
 // DeregisterKeystore removes the registered keystore.
 func (backend *Backend) DeregisterKeystore() {
+	var unobserveKeystore func()
+	defer func() {
+		if unobserveKeystore != nil {
+			unobserveKeystore()
+		}
+	}()
 	defer backend.accountsAndKeystoreLock.Lock()()
 
 	if backend.keystore == nil {
@@ -823,10 +846,8 @@ func (backend *Backend) DeregisterKeystore() {
 	// Only for logging, if there is an error we continue anyway.
 	fingerprint, _ := backend.keystore.RootFingerprint()
 	backend.log.WithField("rootFingerprint", hex.EncodeToString(fingerprint)).Info("deregistering keystore")
-	if backend.unobserveKeystore != nil {
-		backend.unobserveKeystore()
-		backend.unobserveKeystore = nil
-	}
+	unobserveKeystore = backend.unobserveKeystore
+	backend.unobserveKeystore = nil
 	backend.keystore = nil
 	backend.Notify(observable.Event{
 		Subject: "keystores",
@@ -980,15 +1001,19 @@ func (backend *Backend) Close() error {
 		backend.usbManager.Close()
 	}
 
+	var unobserveKeystore func()
+	defer func() {
+		if unobserveKeystore != nil {
+			unobserveKeystore()
+		}
+	}()
 	defer backend.accountsAndKeystoreLock.Lock()()
 
 	errors := []string{}
 
 	backend.uninitAccounts(true)
-	if backend.unobserveKeystore != nil {
-		backend.unobserveKeystore()
-		backend.unobserveKeystore = nil
-	}
+	unobserveKeystore = backend.unobserveKeystore
+	backend.unobserveKeystore = nil
 
 	for _, coin := range backend.coins {
 		if err := coin.Close(); err != nil {

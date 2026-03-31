@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -22,11 +23,14 @@ import (
 	"github.com/BitBoxSwiss/bitbox-wallet-app/backend/coins/eth"
 	"github.com/BitBoxSwiss/bitbox-wallet-app/backend/coins/eth/erc20"
 	"github.com/BitBoxSwiss/bitbox-wallet-app/backend/coins/eth/rpcclient/mocks"
+	"github.com/BitBoxSwiss/bitbox-wallet-app/backend/config"
 	"github.com/BitBoxSwiss/bitbox-wallet-app/backend/devices/usb"
+	keystorepkg "github.com/BitBoxSwiss/bitbox-wallet-app/backend/keystore"
 	keystoremock "github.com/BitBoxSwiss/bitbox-wallet-app/backend/keystore/mocks"
 	"github.com/BitBoxSwiss/bitbox-wallet-app/backend/keystore/software"
 	"github.com/BitBoxSwiss/bitbox-wallet-app/backend/signing"
 	"github.com/BitBoxSwiss/bitbox-wallet-app/util/observable"
+	"github.com/BitBoxSwiss/bitbox-wallet-app/util/observable/action"
 	"github.com/BitBoxSwiss/bitbox-wallet-app/util/test"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -453,4 +457,92 @@ func TestRegisterKeystore(t *testing.T) {
 	require.NotNil(t, b.Accounts().lookup("v0-66666666-btc-0"))
 	require.NotNil(t, b.Accounts().lookup("v0-66666666-ltc-0"))
 	require.NotNil(t, b.Accounts().lookup("v0-66666666-eth-0"))
+}
+
+func TestDeregisterKeystoreWithInFlightNameChange(t *testing.T) {
+	b := newBackend(t, testnetDisabled, regtestDisabled)
+	defer b.Close()
+
+	require.NoError(t, b.config.ModifyAccountsConfig(func(accountsConfig *config.AccountsConfig) error {
+		accountsConfig.GetOrAddKeystore(rootFingerprint1).Name = "Initial"
+		return nil
+	}))
+
+	var ksObservable observable.Implementation
+	rootFingerprintEntered := make(chan struct{})
+	releaseRootFingerprint := make(chan struct{})
+	unobserveStarted := make(chan struct{})
+	var rootFingerprintCalls int32
+
+	ks := &keystoremock.KeystoreMock{
+		ObserveFunc: func(fn func(observable.Event)) func() {
+			unobserve := ksObservable.Observe(fn)
+			return func() {
+				select {
+				case <-unobserveStarted:
+				default:
+					close(unobserveStarted)
+				}
+				unobserve()
+			}
+		},
+		RootFingerprintFunc: func() ([]byte, error) {
+			if atomic.AddInt32(&rootFingerprintCalls, 1) == 1 {
+				close(rootFingerprintEntered)
+				<-releaseRootFingerprint
+			}
+			return rootFingerprint1, nil
+		},
+	}
+
+	unlockKeystore := b.accountsAndKeystoreLock.Lock()
+	b.keystore = ks
+	b.unobserveKeystore = b.observeKeystore(ks)
+	unlockKeystore()
+
+	notifyDone := make(chan struct{})
+	go func() {
+		ksObservable.Notify(observable.Event{
+			Subject: string(keystorepkg.EventNameChanged),
+			Action:  action.Replace,
+			Object:  "Renamed",
+		})
+		close(notifyDone)
+	}()
+
+	select {
+	case <-rootFingerprintEntered:
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for name change callback")
+	}
+
+	deregisterDone := make(chan struct{})
+	go func() {
+		b.DeregisterKeystore()
+		close(deregisterDone)
+	}()
+
+	select {
+	case <-unobserveStarted:
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for unobserve")
+	}
+
+	close(releaseRootFingerprint)
+
+	select {
+	case <-notifyDone:
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for name change callback to complete")
+	}
+
+	select {
+	case <-deregisterDone:
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for deregistration to complete")
+	}
+
+	keystoreConfig, err := b.Config().AccountsConfig().LookupKeystore(rootFingerprint1)
+	require.NoError(t, err)
+	require.Equal(t, "Initial", keystoreConfig.Name)
 }

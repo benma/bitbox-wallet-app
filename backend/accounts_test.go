@@ -261,7 +261,7 @@ func TestObserveKeystoreNameChanged(t *testing.T) {
 	defer unobserve()
 
 	var keystoreObserver func(observable.Event)
-	backend.observeKeystore(&keystoremock.KeystoreMock{
+	ks := &keystoremock.KeystoreMock{
 		ObserveFunc: func(fn func(observable.Event)) func() {
 			keystoreObserver = fn
 			return func() {
@@ -271,7 +271,11 @@ func TestObserveKeystoreNameChanged(t *testing.T) {
 		RootFingerprintFunc: func() ([]byte, error) {
 			return rootFingerprint1, nil
 		},
-	})
+	}
+	unlockKeystore := backend.accountsAndKeystoreLock.Lock()
+	backend.keystore = ks
+	backend.unobserveKeystore = backend.observeKeystore(ks)
+	unlockKeystore()
 	require.NotNil(t, keystoreObserver)
 
 	keystoreObserver(observable.Event{
