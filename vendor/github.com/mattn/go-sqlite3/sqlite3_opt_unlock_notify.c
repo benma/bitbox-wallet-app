@@ -5,11 +5,11 @@
 
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
 #include <stdio.h>
-#ifndef USE_LIBSQLITE3
-#include "sqlite3-binding.h"
+#ifdef USE_SQLCIPHER
+#include "sqlcipher-binding.h"
 #else
-#include <sqlite3.h>
-#endif
+#include "sqlite3-binding.h"
+#endif				
 
 extern int unlock_notify_wait(sqlite3 *db);
 

@@ -6,7 +6,8 @@ WEBROOT  := frontends/web
 include version.mk.inc
 
 GO_LDFLAGS := $(GO_VERSION_LDFLAGS)
-GO_RUN := go run -mod=vendor -ldflags "$(GO_LDFLAGS)"
+GO_TAGS := sqlcipher
+GO_RUN := go run -mod=vendor -tags "$(GO_TAGS)" -ldflags "$(GO_LDFLAGS)"
 
 catch:
 	@echo "Choose a make target."

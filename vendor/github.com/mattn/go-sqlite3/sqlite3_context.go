@@ -7,10 +7,14 @@ package sqlite3
 
 /*
 
-#ifndef USE_LIBSQLITE3
-#include "sqlite3-binding.h"
-#else
+#if defined(USE_LIBSQLITE3)
 #include <sqlite3.h>
+#elif defined(USE_LIBSQLCIPHER)
+#include <sqlcipher/sqlite3.h>
+#elif defined(USE_SQLCIPHER)
+#include "sqlcipher-binding.h"
+#else
+#include "sqlite3-binding.h"
 #endif
 #include <stdlib.h>
 // These wrappers are necessary because SQLITE_TRANSIENT
@@ -28,6 +32,7 @@ import "C"
 
 import (
 	"math"
+	"reflect"
 	"unsafe"
 )
 
@@ -90,15 +95,9 @@ func (c *SQLiteContext) ResultNull() {
 // ResultText sets the result of an SQL function.
 // See: sqlite3_result_text, http://sqlite.org/c3ref/result_blob.html
 func (c *SQLiteContext) ResultText(s string) {
-	if i64 && len(s) > math.MaxInt32 {
-		C.sqlite3_result_error_toobig((*C.sqlite3_context)(c))
-		return
-	}
-	if len(s) == 0 {
-		C.my_result_text((*C.sqlite3_context)(c), (*C.char)(unsafe.Pointer(&placeHolder[0])), 0)
-		return
-	}
-	C.my_result_text((*C.sqlite3_context)(c), (*C.char)(unsafe.Pointer(unsafe.StringData(s))), C.int(len(s)))
+	h := (*reflect.StringHeader)(unsafe.Pointer(&s))
+	cs, l := (*C.char)(unsafe.Pointer(h.Data)), C.int(h.Len)
+	C.my_result_text((*C.sqlite3_context)(c), cs, l)
 }
 
 // ResultZeroblob sets the result of an SQL function.

@@ -6,6 +6,6 @@ build-android:
 	# androidapi version should match minSdkVersion in frontends/android/BitBoxApp/app/build.gradle
 	ANDROID_HOME=${ANDROID_SDK_ROOT} gomobile bind -x -a -glflags="-mod=readonly" -ldflags="-s -w $(GO_VERSION_LDFLAGS)" -trimpath -target android -androidapi 24 .
 build-ios:
-	gomobile bind -x -a -glflags="-mod=readonly" -tags="timetzdata" -trimpath -ldflags="-s -w $(GO_VERSION_LDFLAGS)" -target ios,iossimulator .
+	gomobile bind -x -a -glflags="-mod=readonly" -tags="timetzdata sqlcipher" -trimpath -ldflags="-s -w $(GO_VERSION_LDFLAGS)" -target ios,iossimulator .
 clean:
 	rm -f mobileserver.aar mobileserver-sources.jar

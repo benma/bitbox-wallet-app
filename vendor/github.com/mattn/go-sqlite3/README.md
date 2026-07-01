@@ -9,6 +9,8 @@ go-sqlite3
 
 Latest stable version is v1.14 or later, not v2.
 
+~~**NOTE:** The increase to v2 was an accident. There were no major changes or features.~~
+
 # Description
 
 A sqlite3 driver that conforms to the built-in database/sql interface.
@@ -33,7 +35,7 @@ This package follows the official [Golang Release Policy](https://golang.org/doc
   - [Android](#android)
 - [ARM](#arm)
 - [Cross Compile](#cross-compile)
-- [Compiling](#compiling)
+- [Google Cloud Platform](#google-cloud-platform)
   - [Linux](#linux)
     - [Alpine](#alpine)
     - [Fedora](#fedora)
@@ -41,9 +43,12 @@ This package follows the official [Golang Release Policy](https://golang.org/doc
   - [macOS](#mac-osx)
   - [Windows](#windows)
   - [Errors](#errors)
-- [User Authentication](#user-authentication)
+- [Encryption](#encryption)
   - [Compile](#compile)
   - [Usage](#usage-1)
+- [User Authentication](#user-authentication)
+  - [Compile](#compile-1)
+  - [Usage](#usage-2)
     - [Create protected database](#create-protected-database)
     - [Password Encoding](#password-encoding)
       - [Available Encoders](#available-encoders)
@@ -68,8 +73,9 @@ This package can be installed with the `go get` command:
 
 _go-sqlite3_ is *cgo* package.
 If you want to build your app using go-sqlite3, you need gcc.
+However, after you have built and installed _go-sqlite3_ with `go install github.com/mattn/go-sqlite3` (which requires gcc), you can build your app without relying on gcc in future.
 
-***Important: because this is a `CGO` enabled package, you are required to set the environment variable `CGO_ENABLED=1` and have a `gcc` compiler present within your path.***
+***Important: because this is a `CGO` enabled package, you are required to set the environment variable `CGO_ENABLED=1` and have a `gcc` compile present within your path.***
 
 # API Reference
 
@@ -106,11 +112,17 @@ Boolean values can be one of:
 | Auto Vacuum | `_auto_vacuum` \| `_vacuum` | <ul><li>`0` \| `none`</li><li>`1` \| `full`</li><li>`2` \| `incremental`</li></ul> | For more information see [PRAGMA auto_vacuum](https://www.sqlite.org/pragma.html#pragma_auto_vacuum) |
 | Busy Timeout | `_busy_timeout` \| `_timeout` | `int` | Specify value for sqlite3_busy_timeout. For more information see [PRAGMA busy_timeout](https://www.sqlite.org/pragma.html#pragma_busy_timeout) |
 | Case Sensitive LIKE | `_case_sensitive_like` \| `_cslike` | `boolean` | For more information see [PRAGMA case_sensitive_like](https://www.sqlite.org/pragma.html#pragma_case_sensitive_like) |
+| Cipher Compatibility | `_cipher_compatibility` | `int` | For more information see [PRAGMA cipher_compatibility](https://www.zetetic.net/sqlcipher/sqlcipher-api/#cipher_compatibility) |
+| Cipher Migrate | `_cipher_migrate` | - | For more information see [PRAGMA cipher_migrate](https://www.zetetic.net/sqlcipher/sqlcipher-api/#cipher_migrate) |
+| Cipher Page Size | `_cipher_page_size` | `int` | For more information see [PRAGMA cipher_page_size](https://www.zetetic.net/sqlcipher/sqlcipher-api/#cipher_page_size) |
+| Cipher Plaintext Header Size | `_cipher_plaintext_header_size` | `int` | For more information see [PRAGMA cipher_plaintext_header_size](https://www.zetetic.net/sqlcipher/sqlcipher-api/#cipher_plaintext_header_size) |
+| Cipher Use HMAC | `_cipher_use_hmac` | `int` | For more information see [PRAGMA cipher_use_hmac](https://www.zetetic.net/sqlcipher/sqlcipher-api/#cipher_use_hmac) |
 | Defer Foreign Keys | `_defer_foreign_keys` \| `_defer_fk` | `boolean` | For more information see [PRAGMA defer_foreign_keys](https://www.sqlite.org/pragma.html#pragma_defer_foreign_keys) |
 | Foreign Keys | `_foreign_keys` \| `_fk` | `boolean` | For more information see [PRAGMA foreign_keys](https://www.sqlite.org/pragma.html#pragma_foreign_keys) |
 | Ignore CHECK Constraints | `_ignore_check_constraints` | `boolean` | For more information see [PRAGMA ignore_check_constraints](https://www.sqlite.org/pragma.html#pragma_ignore_check_constraints) |
 | Immutable | `immutable` | `boolean` | For more information see [Immutable](https://www.sqlite.org/c3ref/open.html) |
 | Journal Mode | `_journal_mode` \| `_journal` | <ul><li>DELETE</li><li>TRUNCATE</li><li>PERSIST</li><li>MEMORY</li><li>WAL</li><li>OFF</li></ul> | For more information see [PRAGMA journal_mode](https://www.sqlite.org/pragma.html#pragma_journal_mode) |
+| Encryption Key | `_key` | `string` | Sets the database encryption key to use with [SQLCipher](https://github.com/sqlcipher/sqlcipher). For more information see [PRAGMA key](https://www.zetetic.net/sqlcipher/sqlcipher-api/#PRAGMA_key)
 | Locking Mode | `_locking_mode` \| `_locking` | <ul><li>NORMAL</li><li>EXCLUSIVE</li></ul> | For more information see [PRAGMA locking_mode](https://www.sqlite.org/pragma.html#pragma_locking_mode) |
 | Mode | `mode` | <ul><li>ro</li><li>rw</li><li>rwc</li><li>memory</li></ul> | Access Mode of the database. For more information see [SQLite Open](https://www.sqlite.org/c3ref/open.html) |
 | Mutex Locking | `_mutex` | <ul><li>no</li><li>full</li></ul> | Specify mutex mode. |
@@ -123,7 +135,6 @@ Boolean values can be one of:
 | Transaction Lock | `_txlock` | <ul><li>immediate</li><li>deferred</li><li>exclusive</li></ul> | Specify locking behavior for transactions. |
 | Writable Schema | `_writable_schema` | `Boolean` | When this pragma is on, the SQLITE_MASTER tables in which database can be changed using ordinary UPDATE, INSERT, and DELETE statements. Warning: misuse of this pragma can easily result in a corrupt database file. |
 | Cache Size | `_cache_size` | `int` | Maximum cache size; default is 2000K (2M). See [PRAGMA cache_size](https://sqlite.org/pragma.html#pragma_cache_size) |
-| Statement Cache Size | `_stmt_cache_size` | `int` | Maximum number of prepared statements cached per connection; default is 0 (disabled). Note that `sql.DB` is a connection pool, so each connection maintains its own independent cache. |
 
 
 ## DSN Examples
@@ -173,14 +184,12 @@ go build -tags "icu json1 fts5 secure_delete"
 | JSON SQL Functions | sqlite_json | When this option is defined in the amalgamation, the JSON SQL functions are added to the build automatically |
 | Math Functions | sqlite_math_functions | This compile-time option enables built-in scalar math functions. For more information see [Built-In Mathematical SQL Functions](https://www.sqlite.org/lang_mathfunc.html) |
 | OS Trace | sqlite_os_trace | This option enables OSTRACE() debug logging. This can be verbose and should not be used in production. |
-| Percentile | sqlite_percentile | This option enables [The Percentile Extension](sqlite.org/percentile.html). |
 | Pre Update Hook | sqlite_preupdate_hook | Registers a callback function that is invoked prior to each INSERT, UPDATE, and DELETE operation on a database table. |
 | Secure Delete | sqlite_secure_delete | This compile-time option changes the default setting of the secure_delete pragma.<br><br>When this option is not used, secure_delete defaults to off. When this option is present, secure_delete defaults to on.<br><br>The secure_delete setting causes deleted content to be overwritten with zeros. There is a small performance penalty since additional I/O must occur.<br><br>On the other hand, secure_delete can prevent fragments of sensitive information from lingering in unused parts of the database file after it has been deleted. See the documentation on the secure_delete pragma for additional information |
 | Secure Delete (FAST) | sqlite_secure_delete_fast | For more information see [PRAGMA secure_delete](https://www.sqlite.org/pragma.html#pragma_secure_delete) |
 | Tracing / Debug | sqlite_trace | Activate trace functions |
 | User Authentication | sqlite_userauth | SQLite User Authentication see [User Authentication](#user-authentication) for more information. |
 | Virtual Tables | sqlite_vtable | SQLite Virtual Tables see [SQLite Official VTABLE Documentation](https://www.sqlite.org/vtab.html) for more information, and a [full example here](https://github.com/mattn/go-sqlite3/tree/master/_example/vtable) |
-| The DBSTAT Virtual Table | sqlite_dbstat | The DBSTAT virtual table is a read-only virtual table that returns information about the amount of disk space used to store the content of an SQLite database. See [SQLite Official Documentation](https://www.sqlite.org/dbstat.html) for more information. |
 
 # Compilation
 
@@ -228,7 +237,11 @@ Steps:
 
 Please refer to the project's [README](https://github.com/FiloSottile/homebrew-musl-cross#readme) for further information.
 
-# Compiling
+# Google Cloud Platform
+
+Building on GCP is not possible because Google Cloud Platform does not allow `gcc` to be executed.
+
+Please work only with compiled final binaries.
 
 ## Linux
 
@@ -350,9 +363,19 @@ For example the TDM-GCC Toolchain can be found [here](https://jmeubank.github.io
     go install github.com/mattn/go-sqlite3
     ```
 
-# User Authentication
+# Encryption
 
-***This is deprecated***
+## Compile
+
+To use the database encryption feature, the package has to be compiled with the tags `sqlcipher` (to use the built-in implementation) or `libsqlcipher` (to link directly to libsqlcipher).
+
+The built-in implementation requires OpenSSL to be installed (`libssl-dev` or `openssl-devel` on Linux). It is not required on macOS, where CommonCrypto gets used and is part of the system.
+
+### Usage
+
+Pass your encryption key via the `_key` argument in the connection string. See the [SQLCipher documentation](https://www.zetetic.net/sqlcipher/sqlcipher-api/#PRAGMA_key) for more details.
+
+# User Authentication
 
 This package supports the SQLite User Authentication module.
 
@@ -593,6 +616,34 @@ sqlite3-binding.c, sqlite3-binding.h, sqlite3ext.h
 The -binding suffix was added to avoid build failures under gccgo.
 
 In this repository, those files are an amalgamation of code that was copied from SQLite3. The license of that code is the same as the license of SQLite3.
+
+sqlcipher-binding.c and sqlcipher-binding.h are an amalgamation of code that was copied from [SQLCipher](https://github.com/sqlcipher/sqlcipher). The license of that code is the same as the license of SQLCipher:
+```
+Copyright (c) 2008, ZETETIC LLC
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of the ZETETIC LLC nor the
+      names of its contributors may be used to endorse or promote products
+      derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY ZETETIC LLC ''AS IS'' AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL ZETETIC LLC BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
 
 # Author
 

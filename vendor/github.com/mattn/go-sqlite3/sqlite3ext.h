@@ -1,4 +1,4 @@
-#ifndef USE_LIBSQLITE3
+#if !defined(USE_LIBSQLITE3) && !defined(USE_LIBSQLCIPHER)
 /*
 ** 2006 June 7
 **
@@ -18,7 +18,11 @@
 */
 #ifndef SQLITE3EXT_H
 #define SQLITE3EXT_H
+#ifdef USE_SQLCIPHER
+#include "sqlcipher-binding.h"
+#else
 #include "sqlite3-binding.h"
+#endif				
 #ifdef __clang__
 #define assert(condition) ((void)0)
 #endif
@@ -336,9 +340,9 @@ struct sqlite3_api_routines {
   const char *(*filename_journal)(const char*);
   const char *(*filename_wal)(const char*);
   /* Version 3.32.0 and later */
-  const char *(*create_filename)(const char*,const char*,const char*,
+  char *(*create_filename)(const char*,const char*,const char*,
                            int,const char**);
-  void (*free_filename)(const char*);
+  void (*free_filename)(char*);
   sqlite3_file *(*database_file_object)(const char*);
   /* Version 3.34.0 and later */
   int (*txn_state)(sqlite3*,const char*);
@@ -362,25 +366,6 @@ struct sqlite3_api_routines {
   unsigned char *(*serialize)(sqlite3*,const char *,sqlite3_int64*,
                               unsigned int);
   const char *(*db_name)(sqlite3*,int);
-  /* Version 3.40.0 and later */
-  int (*value_encoding)(sqlite3_value*);
-  /* Version 3.41.0 and later */
-  int (*is_interrupted)(sqlite3*);
-  /* Version 3.43.0 and later */
-  int (*stmt_explain)(sqlite3_stmt*,int);
-  /* Version 3.44.0 and later */
-  void *(*get_clientdata)(sqlite3*,const char*);
-  int (*set_clientdata)(sqlite3*, const char*, void*, void(*)(void*));
-  /* Version 3.50.0 and later */
-  int (*setlk_timeout)(sqlite3*,int,int);
-  /* Version 3.51.0 and later */
-  int (*set_errmsg)(sqlite3*,int,const char*);
-  int (*db_status64)(sqlite3*,int,sqlite3_int64*,sqlite3_int64*,int);
-  /* Version 3.52.0 and later */
-  void (*str_truncate)(sqlite3_str*,int);
-  void (*str_free)(sqlite3_str*);
-  int (*carray_bind)(sqlite3_stmt*,int,void*,int,int,void(*)(void*));
-  int (*carray_bind_v2)(sqlite3_stmt*,int,void*,int,int,void(*)(void*),void*);
 };
 
 /*
@@ -705,25 +690,6 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_serialize              sqlite3_api->serialize
 #endif
 #define sqlite3_db_name                sqlite3_api->db_name
-/* Version 3.40.0 and later */
-#define sqlite3_value_encoding         sqlite3_api->value_encoding
-/* Version 3.41.0 and later */
-#define sqlite3_is_interrupted         sqlite3_api->is_interrupted
-/* Version 3.43.0 and later */
-#define sqlite3_stmt_explain           sqlite3_api->stmt_explain
-/* Version 3.44.0 and later */
-#define sqlite3_get_clientdata         sqlite3_api->get_clientdata
-#define sqlite3_set_clientdata         sqlite3_api->set_clientdata
-/* Version 3.50.0 and later */
-#define sqlite3_setlk_timeout          sqlite3_api->setlk_timeout
-/* Version 3.51.0 and later */
-#define sqlite3_set_errmsg             sqlite3_api->set_errmsg
-#define sqlite3_db_status64            sqlite3_api->db_status64
-/* Version 3.52.0 and later */
-#define sqlite3_str_truncate           sqlite3_api->str_truncate
-#define sqlite3_str_free               sqlite3_api->str_free
-#define sqlite3_carray_bind            sqlite3_api->carray_bind
-#define sqlite3_carray_bind_v2         sqlite3_api->carray_bind_v2
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
@@ -742,7 +708,4 @@ typedef int (*sqlite3_loadext_entry)(
 #endif
 
 #endif /* SQLITE3EXT_H */
-#else // USE_LIBSQLITE3
- // If users really want to link against the system sqlite3 we
-// need to make this file a noop.
- #endif
+#endif // !USE_LIBSQLITE3 && !USE_LIBSQLCIPHER
