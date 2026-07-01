@@ -688,6 +688,12 @@ func (backend *Backend) OnDeviceUninit(f func(string)) {
 // Start starts the background services. It returns a channel of events to handle by the library
 // client.
 func (backend *Backend) Start() <-chan interface{} {
+	if rows, err := runSQLiteDemo(); err != nil {
+		backend.log.WithError(err).Error("SQLite demo failed")
+	} else {
+		backend.log.WithField("rows", rows).Info("SQLite demo completed")
+	}
+
 	backend.usbManager = usb.NewManager(
 		backend.arguments.BitBox02DirectoryPath(),
 		backend.environment.DeviceInfos,
