@@ -168,8 +168,6 @@ github.com/jackpal/go-nat-pmp v1.0.2 h1:KzKSgb7qkJvOUTqYl9/Hg/me3pWgBmERKrTGD7Bd
 github.com/jackpal/go-nat-pmp v1.0.2/go.mod h1:QPH045xvCAeXUZOxsnwmrtiCoxIr9eob+4orBN1SBKc=
 github.com/jessevdk/go-flags v0.0.0-20141203071132-1679536dcc89/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
-github.com/jgiannuzzi/go-sqlite3 v1.14.17-0.20230327162135-f208443ec79d h1:0RvIAnSVmET4VfRgzWzGpzqJivSOhAiBWUZvXJJf/Ek=
-github.com/jgiannuzzi/go-sqlite3 v1.14.17-0.20230327162135-f208443ec79d/go.mod h1:2eHXhiwb8IkHr+BDWZGa96P6+rkvnG63S2DGjv9HUNg=
 github.com/jrick/logrotate v1.0.0/go.mod h1:LNinyqDIJnpAur+b8yyulnQw/wDuN1+BYKlTRt3OuAQ=
 github.com/karalabe/hid v1.0.1-0.20240919124526-821c38d2678e h1:ryNJIEs1fyZNVwJ/Dsz7+EFZTow0ggBdnAIVo8SAs+A=
 github.com/karalabe/hid v1.0.1-0.20240919124526-821c38d2678e/go.mod h1:qk1sX/IBgppQNcGCRoj90u6EGC056EBoIc1oEjCWla8=

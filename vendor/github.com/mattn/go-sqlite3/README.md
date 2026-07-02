@@ -1,3 +1,30 @@
+go-sqlite3-sqlcipher fork
+=========================
+
+This repository is a fork of [mattn/go-sqlite3](https://github.com/mattn/go-sqlite3)
+that adds SQLCipher support. The Go module path remains
+`github.com/mattn/go-sqlite3` so existing imports continue to work with a
+`replace` directive.
+
+Replace the module with this fork:
+
+```go
+require github.com/mattn/go-sqlite3 v1.14.47
+
+replace github.com/mattn/go-sqlite3 => github.com/BitBoxSwiss/go-sqlite3-sqlcipher <version>
+```
+
+Build with the `sqlcipher` tag to use the embedded SQLCipher amalgamation:
+
+```sh
+go build -tags sqlcipher ./...
+```
+
+This fork is based on the original work by Yasuhiro Matsumoto and the
+`mattn/go-sqlite3` contributors. SQLCipher support is based on
+[PR #1109](https://github.com/mattn/go-sqlite3/pull/1109) by
+[jgiannuzzi](https://github.com/jgiannuzzi).
+
 go-sqlite3
 ==========
 
@@ -8,8 +35,6 @@ go-sqlite3
 [![Go Report Card](https://goreportcard.com/badge/github.com/mattn/go-sqlite3)](https://goreportcard.com/report/github.com/mattn/go-sqlite3)
 
 Latest stable version is v1.14 or later, not v2.
-
-~~**NOTE:** The increase to v2 was an accident. There were no major changes or features.~~
 
 # Description
 
@@ -35,7 +60,7 @@ This package follows the official [Golang Release Policy](https://golang.org/doc
   - [Android](#android)
 - [ARM](#arm)
 - [Cross Compile](#cross-compile)
-- [Google Cloud Platform](#google-cloud-platform)
+- [Compiling](#compiling)
   - [Linux](#linux)
     - [Alpine](#alpine)
     - [Fedora](#fedora)
@@ -73,9 +98,8 @@ This package can be installed with the `go get` command:
 
 _go-sqlite3_ is *cgo* package.
 If you want to build your app using go-sqlite3, you need gcc.
-However, after you have built and installed _go-sqlite3_ with `go install github.com/mattn/go-sqlite3` (which requires gcc), you can build your app without relying on gcc in future.
 
-***Important: because this is a `CGO` enabled package, you are required to set the environment variable `CGO_ENABLED=1` and have a `gcc` compile present within your path.***
+***Important: because this is a `CGO` enabled package, you are required to set the environment variable `CGO_ENABLED=1` and have a `gcc` compiler present within your path.***
 
 # API Reference
 
@@ -135,6 +159,7 @@ Boolean values can be one of:
 | Transaction Lock | `_txlock` | <ul><li>immediate</li><li>deferred</li><li>exclusive</li></ul> | Specify locking behavior for transactions. |
 | Writable Schema | `_writable_schema` | `Boolean` | When this pragma is on, the SQLITE_MASTER tables in which database can be changed using ordinary UPDATE, INSERT, and DELETE statements. Warning: misuse of this pragma can easily result in a corrupt database file. |
 | Cache Size | `_cache_size` | `int` | Maximum cache size; default is 2000K (2M). See [PRAGMA cache_size](https://sqlite.org/pragma.html#pragma_cache_size) |
+| Statement Cache Size | `_stmt_cache_size` | `int` | Maximum number of prepared statements cached per connection; default is 0 (disabled). Note that `sql.DB` is a connection pool, so each connection maintains its own independent cache. |
 
 
 ## DSN Examples
@@ -184,12 +209,14 @@ go build -tags "icu json1 fts5 secure_delete"
 | JSON SQL Functions | sqlite_json | When this option is defined in the amalgamation, the JSON SQL functions are added to the build automatically |
 | Math Functions | sqlite_math_functions | This compile-time option enables built-in scalar math functions. For more information see [Built-In Mathematical SQL Functions](https://www.sqlite.org/lang_mathfunc.html) |
 | OS Trace | sqlite_os_trace | This option enables OSTRACE() debug logging. This can be verbose and should not be used in production. |
+| Percentile | sqlite_percentile | This option enables [The Percentile Extension](sqlite.org/percentile.html). |
 | Pre Update Hook | sqlite_preupdate_hook | Registers a callback function that is invoked prior to each INSERT, UPDATE, and DELETE operation on a database table. |
 | Secure Delete | sqlite_secure_delete | This compile-time option changes the default setting of the secure_delete pragma.<br><br>When this option is not used, secure_delete defaults to off. When this option is present, secure_delete defaults to on.<br><br>The secure_delete setting causes deleted content to be overwritten with zeros. There is a small performance penalty since additional I/O must occur.<br><br>On the other hand, secure_delete can prevent fragments of sensitive information from lingering in unused parts of the database file after it has been deleted. See the documentation on the secure_delete pragma for additional information |
 | Secure Delete (FAST) | sqlite_secure_delete_fast | For more information see [PRAGMA secure_delete](https://www.sqlite.org/pragma.html#pragma_secure_delete) |
 | Tracing / Debug | sqlite_trace | Activate trace functions |
 | User Authentication | sqlite_userauth | SQLite User Authentication see [User Authentication](#user-authentication) for more information. |
 | Virtual Tables | sqlite_vtable | SQLite Virtual Tables see [SQLite Official VTABLE Documentation](https://www.sqlite.org/vtab.html) for more information, and a [full example here](https://github.com/mattn/go-sqlite3/tree/master/_example/vtable) |
+| The DBSTAT Virtual Table | sqlite_dbstat | The DBSTAT virtual table is a read-only virtual table that returns information about the amount of disk space used to store the content of an SQLite database. See [SQLite Official Documentation](https://www.sqlite.org/dbstat.html) for more information. |
 
 # Compilation
 
@@ -237,11 +264,7 @@ Steps:
 
 Please refer to the project's [README](https://github.com/FiloSottile/homebrew-musl-cross#readme) for further information.
 
-# Google Cloud Platform
-
-Building on GCP is not possible because Google Cloud Platform does not allow `gcc` to be executed.
-
-Please work only with compiled final binaries.
+# Compiling
 
 ## Linux
 
@@ -376,6 +399,8 @@ The built-in implementation requires OpenSSL to be installed (`libssl-dev` or `o
 Pass your encryption key via the `_key` argument in the connection string. See the [SQLCipher documentation](https://www.zetetic.net/sqlcipher/sqlcipher-api/#PRAGMA_key) for more details.
 
 # User Authentication
+
+***This is deprecated***
 
 This package supports the SQLite User Authentication module.
 

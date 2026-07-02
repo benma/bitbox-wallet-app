@@ -1,3 +1,4 @@
+//go:build (libsqlite3 || libsqlcipher) && !sqlite_serialize
 // +build libsqlite3 libsqlcipher
 // +build !sqlite_serialize
 
