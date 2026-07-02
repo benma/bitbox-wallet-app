@@ -1537,6 +1537,16 @@ func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 			}
 		}
 
+		cipherOptionsUsed := key != "" ||
+			cipherCompatibility > -1 ||
+			cipherMigrate ||
+			cipherPageSize > -1 ||
+			cipherPlaintextHeaderSize > -1 ||
+			cipherUseHmac > -1
+		if cipherOptionsUsed && !sqlcipherAvailable {
+			return nil, errors.New("SQLCipher DSN options require the sqlcipher or libsqlcipher build tag")
+		}
+
 		// Locking Mode (_locking)
 		//
 		// https://www.sqlite.org/pragma.html#pragma_locking_mode

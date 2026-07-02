@@ -20,6 +20,26 @@ Build with the `sqlcipher` tag to use the embedded SQLCipher amalgamation:
 go build -tags sqlcipher ./...
 ```
 
+The embedded `sqlcipher` tag uses these crypto providers:
+
+| Platform | Crypto provider | External runtime crypto dependency |
+| --- | --- | --- |
+| iOS/macOS | CommonCrypto via Apple frameworks | No |
+| Android | LibTomCrypt from the submodule source | No |
+| Linux | LibTomCrypt from the submodule source | No |
+| Windows | LibTomCrypt from the submodule source, with `advapi32` for RNG seeding | No OpenSSL DLL |
+| `libsqlcipher` tag | Determined by the linked external `libsqlcipher` | Depends on that library |
+
+Initialize the LibTomCrypt submodule when working on the fork:
+
+```sh
+git submodule update --init
+```
+
+The fork checks in generated LibTomCrypt binding files under
+`internal/libtomcrypt` so downstream `go mod vendor` users can build with
+`-mod=vendor` without initializing this submodule.
+
 This fork is based on the original work by Yasuhiro Matsumoto and the
 `mattn/go-sqlite3` contributors. SQLCipher support is based on
 [PR #1109](https://github.com/mattn/go-sqlite3/pull/1109) by
@@ -642,33 +662,15 @@ The -binding suffix was added to avoid build failures under gccgo.
 
 In this repository, those files are an amalgamation of code that was copied from SQLite3. The license of that code is the same as the license of SQLite3.
 
-sqlcipher-binding.c and sqlcipher-binding.h are an amalgamation of code that was copied from [SQLCipher](https://github.com/sqlcipher/sqlcipher). The license of that code is the same as the license of SQLCipher:
-```
-Copyright (c) 2008, ZETETIC LLC
-All rights reserved.
+sqlcipher-binding.c and sqlcipher-binding.h are an amalgamation of code that
+was copied from [SQLCipher](https://github.com/sqlcipher/sqlcipher). See
+[LICENSE.SQLCIPHER](./LICENSE.SQLCIPHER) for the SQLCipher copyright notice
+and license terms.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of the ZETETIC LLC nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY ZETETIC LLC ''AS IS'' AND ANY
-EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL ZETETIC LLC BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-```
+internal/libtomcrypt contains generated files copied from
+[LibTomCrypt](https://github.com/sqlcipher/libtomcrypt). See
+[LICENSE.LIBTOMCRYPT](./LICENSE.LIBTOMCRYPT) for the LibTomCrypt license
+terms.
 
 # Author
 

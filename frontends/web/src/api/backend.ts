@@ -61,6 +61,22 @@ export const getDevServers = (): Promise<boolean> => {
   return apiGet('dev-servers');
 };
 
+type TSQLiteDemoResponse = {
+  cipherVersion: string;
+  rows: Array<{
+    id: number;
+    title: string;
+  }>;
+  success: true;
+} | {
+  errorMessage?: string;
+  success: false;
+};
+
+export const runSQLiteDemo = (): Promise<TSQLiteDemoResponse> => {
+  return apiPost('sqlite-demo');
+};
+
 type TQRCode = FailResponse | (SuccessResponse & { data: string });
 
 export const getQRCode = (data: string) => {

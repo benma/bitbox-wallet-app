@@ -688,7 +688,7 @@ func (backend *Backend) OnDeviceUninit(f func(string)) {
 // Start starts the background services. It returns a channel of events to handle by the library
 // client.
 func (backend *Backend) Start() <-chan interface{} {
-	if result, err := runSQLiteDemo(); err != nil {
+	if result, err := RunSQLiteDemo(); err != nil {
 		backend.log.WithError(err).Error("SQLCipher demo failed")
 	} else {
 		backend.log.

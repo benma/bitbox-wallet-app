@@ -3,8 +3,8 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-//go:build sqlcipher
-// +build sqlcipher
+//go:build sqlcipher && !libsqlcipher
+// +build sqlcipher,!libsqlcipher
 
 package sqlite3
 
@@ -15,9 +15,5 @@ package sqlite3
 #cgo CFLAGS: -DSQLITE_EXTRA_SHUTDOWN=sqlcipher_extra_shutdown
 #cgo CFLAGS: -DSQLITE_THREADSAFE=1
 #cgo CFLAGS: -DSQLITE_TEMP_STORE=2
-#cgo !darwin LDFLAGS: -lcrypto
-#cgo !darwin CFLAGS: -DSQLCIPHER_CRYPTO_OPENSSL
-#cgo darwin LDFLAGS: -framework CoreFoundation -framework Security
-#cgo darwin CFLAGS: -DSQLCIPHER_CRYPTO_CC
 */
 import "C"

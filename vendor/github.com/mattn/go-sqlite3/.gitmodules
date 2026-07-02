@@ -1,0 +1,3 @@
+[submodule "internal/libtomcrypt/src"]
+	path = internal/libtomcrypt/src
+	url = https://github.com/sqlcipher/libtomcrypt.git

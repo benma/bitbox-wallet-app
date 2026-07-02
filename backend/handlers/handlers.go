@@ -218,6 +218,7 @@ func NewHandlers(
 	getAPIRouterNoError(apiRouter)("/version", handlers.getVersion).Methods("GET")
 	getAPIRouterNoError(apiRouter)("/testing", handlers.getTesting).Methods("GET")
 	getAPIRouterNoError(apiRouter)("/dev-servers", handlers.getDevServers).Methods("GET")
+	getAPIRouterNoError(apiRouter)("/sqlite-demo", handlers.postSQLiteDemo).Methods("POST")
 	getAPIRouterNoError(apiRouter)("/account-add", handlers.postAddAccount).Methods("POST")
 	getAPIRouterNoError(apiRouter)("/keystores", handlers.getKeystores).Methods("GET")
 	getAPIRouterNoError(apiRouter)("/keystore/{rootFingerprint}/features", handlers.getKeystoreFeatures).Methods("GET")
@@ -668,6 +669,25 @@ func (handlers *Handlers) getTesting(*http.Request) interface{} {
 
 func (handlers *Handlers) getDevServers(*http.Request) interface{} {
 	return handlers.backend.DevServers()
+}
+
+func (handlers *Handlers) postSQLiteDemo(*http.Request) interface{} {
+	type response struct {
+		Success       bool                    `json:"success"`
+		ErrorMessage  string                  `json:"errorMessage,omitempty"`
+		CipherVersion string                  `json:"cipherVersion,omitempty"`
+		Rows          []backend.SQLiteDemoRow `json:"rows,omitempty"`
+	}
+
+	result, err := backend.RunSQLiteDemo()
+	if err != nil {
+		return response{Success: false, ErrorMessage: err.Error()}
+	}
+	return response{
+		Success:       true,
+		CipherVersion: result.CipherVersion,
+		Rows:          result.Rows,
+	}
 }
 
 func (handlers *Handlers) postAddAccount(r *http.Request) interface{} {

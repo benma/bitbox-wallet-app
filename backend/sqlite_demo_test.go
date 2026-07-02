@@ -12,10 +12,10 @@ import (
 )
 
 func TestRunSQLiteDemo(t *testing.T) {
-	result, err := runSQLiteDemo()
+	result, err := runSQLiteDemo(t.TempDir())
 	require.NoError(t, err)
 	require.NotEmpty(t, result.CipherVersion)
-	require.Equal(t, []sqliteDemoRow{
+	require.Equal(t, []SQLiteDemoRow{
 		{ID: 1, Title: "created table"},
 		{ID: 2, Title: "wrote rows"},
 		{ID: 3, Title: "read rows"},

@@ -198,9 +198,10 @@ github.com/karalabe/hid/libusb/libusb/os
 # github.com/kkdai/bstream v1.0.0
 ## explicit; go 1.6
 github.com/kkdai/bstream
-# github.com/mattn/go-sqlite3 v1.14.47 => ../go-sqlite3-sqlcipher
+# github.com/mattn/go-sqlite3 v1.14.47 => github.com/BitBoxSwiss/go-sqlite3-sqlcipher v0.0.0-20260702224034-014653a66134
 ## explicit; go 1.21
 github.com/mattn/go-sqlite3
+github.com/mattn/go-sqlite3/internal/libtomcrypt
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
@@ -341,4 +342,4 @@ google.golang.org/protobuf/types/known/emptypb
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# github.com/mattn/go-sqlite3 => ../go-sqlite3-sqlcipher
+# github.com/mattn/go-sqlite3 => github.com/BitBoxSwiss/go-sqlite3-sqlcipher v0.0.0-20260702224034-014653a66134

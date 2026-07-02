@@ -2,6 +2,8 @@ github.com/BitBoxSwiss/bitbox02-api-go v0.0.0-20260420184007-d546462995df h1:VED
 github.com/BitBoxSwiss/bitbox02-api-go v0.0.0-20260420184007-d546462995df/go.mod h1:0A/jvQgsh2/nLvbFTF9cCwO0QXlAsx0fZqkFNbsCCnM=
 github.com/BitBoxSwiss/block-client-go v0.0.0-20250813114605-c276f6470c3d h1:HdoIlaUcNyEBajUoQgsxZtDMyCFyE7qv1kpeFe/u7nQ=
 github.com/BitBoxSwiss/block-client-go v0.0.0-20250813114605-c276f6470c3d/go.mod h1:SJTiQZU9ggBzVKMni97rpNS9GddPKErndFXNSDrfEGc=
+github.com/BitBoxSwiss/go-sqlite3-sqlcipher v0.0.0-20260702224034-014653a66134 h1:0KQ/lhEJm95JvPZuWK0T0+piboRDsKaPHpjkp5l8VdE=
+github.com/BitBoxSwiss/go-sqlite3-sqlcipher v0.0.0-20260702224034-014653a66134/go.mod h1:6JTjA44L93a0QCyJef5YvlPoKXntQPjzWv5gtm9sB6w=
 github.com/DataDog/zstd v1.4.5 h1:EndNeuB0l9syBZhut0wns3gV1hL8zX8LIu6ZiVHWLIQ=
 github.com/DataDog/zstd v1.4.5/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=

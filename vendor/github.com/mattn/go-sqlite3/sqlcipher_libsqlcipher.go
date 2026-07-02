@@ -3,8 +3,8 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-//go:build libsqlcipher
-// +build libsqlcipher
+//go:build libsqlcipher && !sqlcipher
+// +build libsqlcipher,!sqlcipher
 
 package sqlite3
 

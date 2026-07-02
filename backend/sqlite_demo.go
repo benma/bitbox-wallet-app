@@ -4,41 +4,52 @@ package backend
 
 import (
 	"bytes"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
 
+	utilConfig "github.com/BitBoxSwiss/bitbox-wallet-app/util/config"
 	"github.com/BitBoxSwiss/bitbox-wallet-app/util/errp"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const sqliteDemoKey = "bitbox-sqlcipher-demo-key"
+const sqliteDemoRawKeySize = 32
 
-type sqliteDemoRow struct {
-	ID    int64
-	Title string
+type SQLiteDemoRow struct {
+	ID    int64  `json:"id"`
+	Title string `json:"title"`
 }
 
-type sqliteDemoResult struct {
+type SQLiteDemoResult struct {
 	CipherVersion string
-	Rows          []sqliteDemoRow
+	Rows          []SQLiteDemoRow
 }
 
-func runSQLiteDemo() (*sqliteDemoResult, error) {
-	file, err := os.CreateTemp("", "bitbox-sqlcipher-demo-*.db")
+func RunSQLiteDemo() (*SQLiteDemoResult, error) {
+	return runSQLiteDemo(utilConfig.AppDir())
+}
+
+func runSQLiteDemo(baseDir string) (*SQLiteDemoResult, error) {
+	rawKey, err := sqliteDemoRawKey()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := os.MkdirAll(baseDir, 0700); err != nil {
+		return nil, errp.WithStack(err)
+	}
+	demoDir, err := os.MkdirTemp(baseDir, "bitbox-sqlcipher-demo-")
 	if err != nil {
 		return nil, errp.WithStack(err)
 	}
-	dbFilename := file.Name()
-	if err := file.Close(); err != nil {
-		os.Remove(dbFilename)
-		return nil, errp.WithStack(err)
-	}
-	defer os.Remove(dbFilename)
+	defer os.RemoveAll(demoDir)
+	dbFilename := filepath.Join(demoDir, "demo.db")
 
-	db, err := sql.Open("sqlite3", sqliteDemoDSN(dbFilename, sqliteDemoKey))
+	db, err := sql.Open("sqlite3", sqliteDemoDSN(dbFilename, rawKey))
 	if err != nil {
 		return nil, errp.WithStack(err)
 	}
@@ -96,14 +107,8 @@ func runSQLiteDemo() (*sqliteDemoResult, error) {
 	if err := sqliteDemoAssertEncrypted(dbFilename); err != nil {
 		return nil, err
 	}
-	if err := sqliteDemoAssertCannotRead(dbFilename, ""); err != nil {
-		return nil, err
-	}
-	if err := sqliteDemoAssertCannotRead(dbFilename, "wrong-key"); err != nil {
-		return nil, err
-	}
 
-	db, err = sql.Open("sqlite3", sqliteDemoDSN(dbFilename, sqliteDemoKey))
+	db, err = sql.Open("sqlite3", sqliteDemoDSN(dbFilename, rawKey))
 	if err != nil {
 		return nil, errp.WithStack(err)
 	}
@@ -116,9 +121,9 @@ func runSQLiteDemo() (*sqliteDemoResult, error) {
 	}
 	defer rows.Close()
 
-	var result []sqliteDemoRow
+	var result []SQLiteDemoRow
 	for rows.Next() {
-		var row sqliteDemoRow
+		var row SQLiteDemoRow
 		if err := rows.Scan(&row.ID, &row.Title); err != nil {
 			return nil, errp.WithStack(err)
 		}
@@ -131,10 +136,18 @@ func runSQLiteDemo() (*sqliteDemoResult, error) {
 		return nil, errp.WithStack(fmt.Errorf("unexpected sqlite demo row count: %d", len(result)))
 	}
 
-	return &sqliteDemoResult{
+	return &SQLiteDemoResult{
 		CipherVersion: cipherVersion,
 		Rows:          result,
 	}, nil
+}
+
+func sqliteDemoRawKey() (string, error) {
+	var key [sqliteDemoRawKeySize]byte
+	if _, err := rand.Read(key[:]); err != nil {
+		return "", errp.WithStack(err)
+	}
+	return "x'" + hex.EncodeToString(key[:]) + "'", nil
 }
 
 func sqliteDemoDSN(filename string, key string) string {
@@ -169,21 +182,6 @@ func sqliteDemoAssertEncrypted(filename string) error {
 	}
 	if bytes.HasPrefix(contents, []byte("SQLite format 3\x00")) {
 		return errp.WithStack(fmt.Errorf("SQLCipher demo database has a plaintext SQLite header"))
-	}
-	return nil
-}
-
-func sqliteDemoAssertCannotRead(filename string, key string) error {
-	db, err := sql.Open("sqlite3", sqliteDemoDSN(filename, key))
-	if err != nil {
-		return nil
-	}
-	defer db.Close()
-	db.SetMaxOpenConns(1)
-
-	var count int
-	if err := db.QueryRow("SELECT COUNT(*) FROM demo_rows").Scan(&count); err == nil {
-		return errp.WithStack(fmt.Errorf("SQLCipher demo database was readable with key %q", key))
 	}
 	return nil
 }

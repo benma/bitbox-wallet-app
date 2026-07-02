@@ -14,6 +14,7 @@ import { UnlockSoftwareKeystore } from './components/advanced-settings/unlock-so
 import { RestartInTestnetSetting } from './components/advanced-settings/restart-in-testnet-setting';
 import { ExportLogSetting } from './components/advanced-settings/export-log-setting';
 import { CustomGapLimitSettings } from './components/advanced-settings/custom-gap-limit-setting';
+import { SQLiteDemoSetting } from './components/advanced-settings/sqlite-demo-setting';
 import { MobileHeader } from './components/mobile-header';
 import { Guide } from '@/components/guide/guide';
 import { Entry } from '@/components/guide/entry';
@@ -96,6 +97,7 @@ export const AdvancedSettingsContent = ({
           id: 'export-logs',
           content: <ExportLogSetting />,
         }] : []),
+        { id: 'sqlite-demo', content: <SQLiteDemoSetting /> },
       ],
     },
   ];
