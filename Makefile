@@ -6,7 +6,7 @@ WEBROOT  := frontends/web
 include version.mk.inc
 
 GO_LDFLAGS := $(GO_VERSION_LDFLAGS)
-GO_TAGS := sqlcipher
+override GO_TAGS := sqlcipher
 GO_RUN := go run -mod=vendor -tags "$(GO_TAGS)" -ldflags "$(GO_LDFLAGS)"
 
 catch:
@@ -95,4 +95,4 @@ go-vendor:
 update-bitbox02-api-go:
 	./scripts/update-bitbox02-api-go.sh
 update-btc-checkpoints:
-	go run cmd/playground/update_btc_checkpoints/main.go
+	$(GO_RUN) cmd/playground/update_btc_checkpoints/main.go

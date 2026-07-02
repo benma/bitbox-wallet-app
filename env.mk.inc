@@ -2,3 +2,4 @@
 
 LIBNAME=libserver
 MACOS_MIN_VERSION := 10.15
+override GO_TAGS := sqlcipher

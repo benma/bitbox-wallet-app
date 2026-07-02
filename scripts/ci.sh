@@ -10,10 +10,11 @@ export GOTOOLCHAIN="local"
 
 APP_VERSION="$(cat APP_VERSION)"
 GO_LDFLAGS="-X github.com/BitBoxSwiss/bitbox-wallet-app/backend/versioninfo.versionString=${APP_VERSION}"
+GO_TAGS="sqlcipher"
 
 # This script has to be called from the project root directory.
-go build -trimpath -mod=vendor -ldflags "${GO_LDFLAGS}" ./...
-go test -race -mod=vendor -ldflags "${GO_LDFLAGS}" ./... -count=1 -v
+go build -trimpath -mod=vendor -tags "${GO_TAGS}" -ldflags "${GO_LDFLAGS}" ./...
+go test -race -mod=vendor -tags "${GO_TAGS}" -ldflags "${GO_LDFLAGS}" ./... -count=1 -v
 golangci-lint --version
 golangci-lint config verify
 golangci-lint run

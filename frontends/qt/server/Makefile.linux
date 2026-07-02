@@ -12,7 +12,7 @@ linux:
 	CGO_CFLAGS="${GOLNXSECFLAGS} ${CFLAGS}" \
 	CGO_LDFLAGS="${GOLNXLDFLAGS} ${LFLAGS}" \
 	GOARCH=${GOARCH} CGO_ENABLED=${CGO} GOOS=${GOOS} GOTOOLCHAIN=${GOTOOLCHAIN} \
-	go build -trimpath -x -mod=vendor -buildmode=${BUILDMODE} -ldflags \
+	go build -trimpath -x -mod=vendor -tags "$(GO_TAGS)" -buildmode=${BUILDMODE} -ldflags \
 		"$(GO_VERSION_LDFLAGS) -extldflags=\"$(GOLNXEXTLDFLAGS)\"" \
 		-o ${LIBNAME}.so
 
