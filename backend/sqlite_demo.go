@@ -151,16 +151,12 @@ func sqliteDemoRawKey() (string, error) {
 }
 
 func sqliteDemoDSN(filename string, key string) string {
-	u := url.URL{
-		Scheme: "file",
-		Path:   filepath.ToSlash(filename),
+	if key == "" {
+		return filename
 	}
-	if key != "" {
-		query := u.Query()
-		query.Set("_key", key)
-		u.RawQuery = query.Encode()
-	}
-	return u.String()
+	query := url.Values{}
+	query.Set("_key", key)
+	return filename + "?" + query.Encode()
 }
 
 func sqliteDemoCipherVersion(db *sql.DB) (string, error) {

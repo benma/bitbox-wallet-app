@@ -64,4 +64,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/mattn/go-sqlite3 => github.com/BitBoxSwiss/go-sqlite3-sqlcipher v0.0.0-20260702224034-014653a66134
+replace github.com/mattn/go-sqlite3 => github.com/BitBoxSwiss/go-sqlite3-sqlcipher v0.0.0-20260703000304-d03fd26d1e28
